@@ -1,16 +1,21 @@
 //
 
 const std = @import("std");
+const Io = std.Io;
+const File = Io.File;
 const print = std.debug.print;
 
-pub fn main() void {
-    const t1 = Least(5);
-    const t2 = Least(50_000);
-    const t3 = Least(500_000);
+pub fn main(init: std.process.Init) !void {
+    _ = init;
+    print("explica", .{});
+    // const io = init.io;
+    // const gpa = init.gpa;
 
-    print("t1: {any}\n", .{t1});
-    print("t2: {any}\n", .{t2});
-    print("t3: {any}\n", .{t3});
+    // const cwd = Io.Dir.cwd();
+    // const dir = try cwd.openDir(io, "set_64_1/", .{});
+    // const file_content = try dir.readFileAlloc(io, "set_64_1_15", gpa, .unlimited);
+    // const N = getN(file_content);
+    // print("{}", .{N});
 }
 
 const pow = std.math.pow;
@@ -23,4 +28,11 @@ pub fn Least(comptime N: usize) type {
         return u32
     else
         return u64;
+}
+
+pub fn getN(raw_input: []u8) usize {
+    std.mem.countScalar(u8, raw_input, '\n');
+    var lines = std.mem.splitScalar(u8, raw_input, '\n');
+    var N: usize = 0;
+    while (lines.next()) |_| : (N += 1) {}
 }

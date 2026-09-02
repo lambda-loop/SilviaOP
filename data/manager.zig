@@ -99,20 +99,31 @@ pub fn main(init: std.process.Init) !void {
     const io = init.io;
     const gpa = init.gpa;
 
+    const args = try init.minimal.args.toSlice(gpa);
+    defer gpa.free(args);
+
     const cwd = try Io.Dir.cwd().openDir(io, ".", .{ .iterate = true });
-    const is = try getAllInstancesFromDir(io, cwd, gpa);
+    defer cwd.close(io);
+
+    const input_path = args[1];
+    const input_dir = try cwd.openDir(io, input_path, .{
+        .iterate = true,
+    });
+    defer input_dir.close(io);
+
+    const is = try getAllInstancesFromDir(io, input_dir, gpa);
     defer {
         for (is) |i| i.deinit(gpa);
         gpa.free(is);
     }
 
-    const args = try init.minimal.args.toSlice(gpa);
-    defer gpa.free(args);
-    const path_to_write = args[1];
-    const target_name = args[2];
+    const path_to_write = args[2];
+    const target_name = args[3];
 
     const target_dir = try Io.Dir.openDir(cwd, io, path_to_write, .{});
+    defer target_dir.close(io);
     const target_file = try target_dir.createFile(io, target_name, .{});
+    defer target_file.close(io);
 
     const buffer = try gpa.alloc(u8, 1024);
     defer gpa.free(buffer);
