@@ -12,13 +12,16 @@ pub const Instance = struct {
     file_name: []const u8,
     total_sum: usize,
     max_score: usize,
+    tmax: f32,
     N: usize,
 
     const Self = @This();
     fn init(file_name: []const u8, input: []const u8) Self {
         // const N = std.mem.countScalar(u8, input, '\n') - 1;
         var lines = std.mem.splitScalar(u8, input, '\n');
-        _ = lines.next();
+        const fst_line = lines.next() orelse unreachable;
+        var fst_line_iter = std.mem.tokenizeAny(u8, fst_line, "\r\t ");
+        const tmax_str = fst_line_iter.next() orelse unreachable;
 
         var total_sum: usize = 0;
         var line_count: usize = 0;
@@ -42,6 +45,7 @@ pub const Instance = struct {
             .total_sum = total_sum,
             .max_score = max_score,
             .N = line_count - 1,
+            .tmax = std.fmt.parseFloat(f32, tmax_str) catch unreachable,
         };
     }
 
@@ -50,7 +54,7 @@ pub const Instance = struct {
     }
 
     fn format(self: Self, allocator: Allocator) ![]u8 {
-        return std.fmt.allocPrint(allocator, "{s},{d},{d},{d}", .{ self.file_name, self.N, self.total_sum, self.max_score });
+        return std.fmt.allocPrint(allocator, "{s},{d},{d},{d},{}", .{ self.file_name, self.N, self.total_sum, self.max_score, self.tmax });
     }
 };
 

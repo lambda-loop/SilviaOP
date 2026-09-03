@@ -8,14 +8,19 @@ const print = std.debug.print;
 const problem = @import("problem.zig");
 
 pub fn main(init: std.process.Init) !void {
-    _ = init;
+    const io = init.io;
+    const gpa = init.gpa;
     // print("explica", .{});
+
+    const cwd = std.Io.Dir.cwd();
+    const dir = try cwd.openDir(io, "data", .{});
 
     const n = problem.num_problems;
     print("num_problems: {any}\n", .{n});
 
     inline for (0..problem.num_problems) |p_idx| {
         const p = problem.Problem(p_idx);
+        try p.new(io, dir, gpa);
         print("{any} {any} \n", .{ @TypeOf(p.N), @TypeOf(p.M) });
         print("{any} {any} \n", .{ p.N, p.M });
         print("instance: {s}\n\n", .{p.getInstance(p_idx)});

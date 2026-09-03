@@ -14,9 +14,11 @@ pub const num_problems: usize = blk: {
 };
 
 const Content = struct {
+    const t = u0;
     sum_scores: usize,
     max_score: usize,
     num_points: usize,
+    tmax: f32,
 
     fn new(problem_number: usize) !?Content {
         @setEvalBranchQuota(1000 * 1000 * 1000);
@@ -33,11 +35,13 @@ const Content = struct {
         const num_points_str = iter.next().?;
         const sum_scores_str = iter.next().?;
         const max_score_str = iter.next().?;
+        const tmax_str = iter.next().?;
 
         return .{
             .num_points = try std.fmt.parseInt(usize, num_points_str, 10),
             .sum_scores = try std.fmt.parseInt(usize, sum_scores_str, 10),
             .max_score = try std.fmt.parseInt(usize, max_score_str, 10),
+            .tmax = try std.fmt.parseFloat(f32, tmax_str),
         };
     }
 };
@@ -52,33 +56,58 @@ pub fn Problem(problem_number: usize) type {
         pub const N: NUM_POINTS_T = @intCast(content.num_points);
         pub const M: MAX_SCORE_T = @intCast(content.max_score);
 
-        tmax: f32,
-        // TODO: should it care the least type for the MAX score acctually?
+        // TODO: tmax should also be know at compile time..
+        pub const tmax = content.tmax;
         scores: [N]MAX_SCORE_T,
         costs: [N][N]f32,
 
         const Self = @This();
-        // fn new(io: Io, dir: Dir, allocator: Allocator) !Self {
-        //     const line = getInstance(problem_number);
-        //     var iter = std.mem.tokenizeScalar(u8, line, ',');
-        //     const problem_name = iter.next() orelse unreachable;
+        pub fn new(io: Io, dir: Dir, allocator: Allocator) !void {
+            const pline = getInstance(problem_number);
+            var piter = std.mem.tokenizeScalar(u8, pline, ',');
+            const problem_name = piter.next() orelse unreachable;
 
-        //     const file_name = try std.mem.concat(
-        //         allocator,
-        //         u8,
-        //         &[_][]const u8{ problem_name, ".txt" },
-        //     );
+            const file_name = try std.mem.concat(
+                allocator,
+                u8,
+                &[_][]const u8{ problem_name, ".txt" },
+            );
+            defer allocator.free(file_name);
 
-        //     const input = try dir.readFileAlloc(io, file_name, allocator, .unlimited);
+            const input = try dir.readFileAlloc(io, file_name, allocator, .unlimited);
+            defer allocator.free(input);
 
-        // const file = try dir.openFile(io, file_name, .{});
-        // defer file.close();
+            var scores = std.ArrayList(MAX_SCORE_T).empty;
+            var points = std.ArrayList(Point2D).empty;
 
-        // // const buffer = try allocator.alloc(u8, 1024);
-        // // allocator.free(buffer);
+            var lines = std.mem.tokenizeScalar(u8, input, '\n');
+            _ = lines.next();
+            while (lines.next()) |line| {
+                if (line.len == 0) continue;
+                var iter = std.mem.tokenizeAny(u8, line, "\r\t ");
+                const x_str = iter.next().?;
+                const y_str = iter.next() orelse {
+                    std.debug.print("problem y line: {s}", .{line});
+                    unreachable;
+                };
+                const score_str = iter.next().?;
 
-        // defer writer.flush catch {};
-        // }
+                const score = try std.fmt.parseInt(MAX_SCORE_T, score_str, 10);
+                const point = Point2D{
+                    .x = try std.fmt.parseFloat(f32, x_str),
+                    .y = try std.fmt.parseFloat(f32, y_str),
+                };
+
+                try scores.append(allocator, score);
+                try points.append(allocator, point);
+            }
+
+            std.debug.print("{any}\n", .{scores});
+            std.debug.print("{any}\n", .{points});
+
+            points.deinit(allocator);
+            scores.deinit(allocator);
+        }
 
         pub fn getInstance(idx: usize) []const u8 {
             var lines = std.mem.tokenizeScalar(u8, ptable, '\n');
@@ -108,4 +137,11 @@ pub fn Least(comptime N: usize) type {
 const Point2D = struct {
     x: f32,
     y: f32,
+
+    pub fn distance_to(self: Point2D, other: Point2D) f32 {
+        const dx = other.x - self.x;
+        const dy = other.y - self.y;
+
+        return std.math.hypot(dx, dy);
+    }
 };
