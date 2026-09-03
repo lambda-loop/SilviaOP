@@ -11,6 +11,7 @@ const Allocator = std.mem.Allocator;
 pub const Instance = struct {
     file_name: []const u8,
     total_sum: usize,
+    max_score: usize,
     N: usize,
 
     const Self = @This();
@@ -21,6 +22,7 @@ pub const Instance = struct {
 
         var total_sum: usize = 0;
         var line_count: usize = 0;
+        var max_score: usize = 0;
         while (lines.next()) |line| : (line_count += 1) {
             if (line.len == 0) continue;
             var iter = std.mem.tokenizeAny(u8, line, "\t\r ");
@@ -32,11 +34,13 @@ pub const Instance = struct {
             // print("\n{s}\n", .{s_str});
             const s = std.fmt.parseInt(usize, s_str, 10) catch unreachable;
             total_sum += s;
+            if (s > max_score) max_score = s;
         }
 
         return .{
             .file_name = file_name,
             .total_sum = total_sum,
+            .max_score = max_score,
             .N = line_count - 1,
         };
     }
@@ -46,7 +50,7 @@ pub const Instance = struct {
     }
 
     fn format(self: Self, allocator: Allocator) ![]u8 {
-        return std.fmt.allocPrint(allocator, "{s},{d},{d}", .{ self.file_name, self.N, self.total_sum });
+        return std.fmt.allocPrint(allocator, "{s},{d},{d},{d}", .{ self.file_name, self.N, self.total_sum, self.max_score });
     }
 };
 

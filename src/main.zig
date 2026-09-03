@@ -11,10 +11,15 @@ pub fn main(init: std.process.Init) !void {
     _ = init;
     // print("explica", .{});
 
-    const p = problem.Problem(42);
     const n = problem.num_problems;
     print("num_problems: {any}\n", .{n});
-    print("{any} {any}\n", .{ p.N, p.M });
+
+    inline for (0..problem.num_problems) |p_idx| {
+        const p = problem.Problem(p_idx);
+        print("{any} {any} \n", .{ @TypeOf(p.N), @TypeOf(p.M) });
+        print("{any} {any} \n", .{ p.N, p.M });
+        print("instance: {s}\n\n", .{p.getInstance(p_idx)});
+    }
 
     // const io = init.io;
     // const gpa = init.gpa;
