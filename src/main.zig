@@ -5,9 +5,15 @@ const Io = std.Io;
 const File = Io.File;
 const print = std.debug.print;
 
+const problem = @import("problem.zig");
+
 pub fn main(init: std.process.Init) !void {
     _ = init;
-    print("explica", .{});
+    // print("explica", .{});
+
+    const p = problem.Problem(42);
+    print("{any} {any}", .{ p.N, p.M });
+
     // const io = init.io;
     // const gpa = init.gpa;
 

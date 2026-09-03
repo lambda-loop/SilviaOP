@@ -1,10 +1,42 @@
 //
 
 const std = @import("std");
+const ptable = @embedFile("table");
 
-pub fn Problem(comptime N: usize) type {
-    _ = N;
-    unreachable;
+const Content = struct {
+    max_score: usize,
+    num_points: usize,
+
+    fn new(problem_number: usize) !?Content {
+        @setEvalBranchQuota(1000 * 1000 * 1000);
+        var lines = std.mem.tokenizeScalar(u8, ptable, '\n');
+
+        for (0..problem_number) |_| {
+            _ = lines.next();
+        }
+
+        const line = lines.next().?;
+        var iter = std.mem.tokenizeScalar(u8, line, ',');
+
+        _ = iter.next();
+        const num_points_str = iter.next().?;
+        const max_score_str = iter.next().?;
+
+        return .{
+            .max_score = try std.fmt.parseInt(usize, max_score_str, 10),
+            .num_points = try std.fmt.parseInt(usize, num_points_str, 10),
+        };
+    }
+};
+
+pub fn Problem(problem_number: usize) type {
+    @setEvalBranchQuota(1000 * 1000 * 1000);
+    // const max_score = undefined
+    const content: Content = comptime Content.new(problem_number) catch {} orelse unreachable;
+    return struct {
+        pub const N = content.num_points;
+        pub const M = content.max_score;
+    };
 }
 
 const pow = std.math.pow;
