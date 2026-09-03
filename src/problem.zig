@@ -3,6 +3,11 @@
 const std = @import("std");
 const ptable = @embedFile("table");
 
+pub const num_problems: usize = blk: {
+    @setEvalBranchQuota(1000 * 1000 * 1000);
+    break :blk std.mem.countScalar(u8, ptable, '\n');
+};
+
 const Content = struct {
     max_score: usize,
     num_points: usize,
@@ -33,9 +38,11 @@ pub fn Problem(problem_number: usize) type {
     @setEvalBranchQuota(1000 * 1000 * 1000);
     // const max_score = undefined
     const content: Content = comptime Content.new(problem_number) catch {} orelse unreachable;
+    const MAX_SCORE_T = Least(content.max_score);
+    const NUM_POINTS_T = Least(content.num_points);
     return struct {
-        pub const N = content.num_points;
-        pub const M = content.max_score;
+        pub const N: NUM_POINTS_T = @intCast(content.num_points);
+        pub const M: MAX_SCORE_T = @intCast(content.max_score);
     };
 }
 

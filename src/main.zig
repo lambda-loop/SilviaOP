@@ -12,7 +12,9 @@ pub fn main(init: std.process.Init) !void {
     // print("explica", .{});
 
     const p = problem.Problem(42);
-    print("{any} {any}", .{ p.N, p.M });
+    const n = problem.num_problems;
+    print("num_problems: {any}\n", .{n});
+    print("{any} {any}\n", .{ p.N, p.M });
 
     // const io = init.io;
     // const gpa = init.gpa;

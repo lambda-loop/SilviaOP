@@ -111,7 +111,7 @@ pub fn main(init: std.process.Init) !void {
     });
     defer input_dir.close(io);
 
-    const is = try getAllInstancesFromDir(io, input_dir, gpa);
+    const is = try getAllInstancesFromSubDir(io, input_dir, gpa);
     defer {
         for (is) |i| i.deinit(gpa);
         gpa.free(is);
