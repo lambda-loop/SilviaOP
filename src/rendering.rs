@@ -1,5 +1,6 @@
 //
 
+// AI GENERATED: (causes just a auxiliar and not acctally the ureal project)
 #[derive(Debug, Clone)]
 pub struct Map {
     pub route: Vec<u8>,
