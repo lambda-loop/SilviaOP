@@ -5,6 +5,7 @@ mod pos;
 use matrix::SquareMatrix;
 use pos::Node as Pos2D;
 
+#[derive(Debug)]
 pub struct Problem {
     tmax: f32,
     costs: SquareMatrix<f32>,
@@ -28,9 +29,6 @@ impl Problem {
 
         let len = points.len();
         let scores = points.iter().map(|p| p.score).collect();
-        // for i in 0..len {
-        //     scores[i] = points[i].score;
-        // }
 
         let mut costs = SquareMatrix::<f32>::new(len);
 
