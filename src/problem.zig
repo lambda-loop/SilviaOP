@@ -18,7 +18,7 @@ const Content = struct {
     sum_scores: usize,
     max_score: usize,
     num_points: usize,
-    tmax: f32,
+    tmax: f16,
 
     fn new(problem_number: usize) !?Content {
         @setEvalBranchQuota(1000 * 1000 * 1000);
@@ -41,7 +41,7 @@ const Content = struct {
             .num_points = try std.fmt.parseInt(usize, num_points_str, 10),
             .sum_scores = try std.fmt.parseInt(usize, sum_scores_str, 10),
             .max_score = try std.fmt.parseInt(usize, max_score_str, 10),
-            .tmax = try std.fmt.parseFloat(f32, tmax_str),
+            .tmax = try std.fmt.parseFloat(f16, tmax_str),
         };
     }
 };
@@ -50,19 +50,21 @@ pub fn Problem(problem_number: usize) type {
     @setEvalBranchQuota(1000 * 1000 * 1000);
     // const max_score = undefined
     const content: Content = comptime Content.new(problem_number) catch {} orelse unreachable;
-    const MAX_SCORE_T = Least(content.max_score);
-    const NUM_POINTS_T = Least(content.num_points);
     return struct {
-        pub const N: NUM_POINTS_T = @intCast(content.num_points);
-        pub const M: MAX_SCORE_T = @intCast(content.max_score);
+        pub const MAX_SCORE_T = Least(content.max_score);
+        pub const SUM_SCORES_T = Least(content.sum_scores);
+        pub const NUM_POINTS_T = Least(content.num_points);
+
+        pub const num_points: NUM_POINTS_T = @intCast(content.num_points);
+        pub const max_score: MAX_SCORE_T = @intCast(content.max_score);
 
         // TODO: tmax should also be know at compile time..
         pub const tmax = content.tmax;
-        scores: [N]MAX_SCORE_T,
-        costs: [N][N]f32,
+        scores: [num_points]MAX_SCORE_T,
+        costs: [num_points][num_points]f16,
 
         const Self = @This();
-        pub fn new(io: Io, dir: Dir, allocator: Allocator) !void {
+        pub fn new(io: Io, dir: Dir, allocator: Allocator) !Self {
             const pline = getInstance(problem_number);
             var piter = std.mem.tokenizeScalar(u8, pline, ',');
             const problem_name = piter.next() orelse unreachable;
@@ -78,7 +80,10 @@ pub fn Problem(problem_number: usize) type {
             defer allocator.free(input);
 
             var scores = std.ArrayList(MAX_SCORE_T).empty;
+            defer scores.deinit(allocator);
+
             var points = std.ArrayList(Point2D).empty;
+            defer points.deinit(allocator);
 
             var lines = std.mem.tokenizeScalar(u8, input, '\n');
             _ = lines.next();
@@ -94,19 +99,31 @@ pub fn Problem(problem_number: usize) type {
 
                 const score = try std.fmt.parseInt(MAX_SCORE_T, score_str, 10);
                 const point = Point2D{
-                    .x = try std.fmt.parseFloat(f32, x_str),
-                    .y = try std.fmt.parseFloat(f32, y_str),
+                    .x = try std.fmt.parseFloat(f16, x_str),
+                    .y = try std.fmt.parseFloat(f16, y_str),
                 };
 
                 try scores.append(allocator, score);
                 try points.append(allocator, point);
             }
 
-            std.debug.print("{any}\n", .{scores});
-            std.debug.print("{any}\n", .{points});
+            var scores_f: [num_points]MAX_SCORE_T = undefined;
+            var costs_f: [num_points][num_points]f16 = undefined;
 
-            points.deinit(allocator);
-            scores.deinit(allocator);
+            for (0..num_points) |i| {
+                scores_f[i] = scores.items[i];
+            }
+
+            for (0..num_points) |i| {
+                for (0..num_points) |j| {
+                    costs_f[i][j] = points.items[i].distance_to(points.items[j]);
+                }
+            }
+
+            return .{
+                .scores = scores_f,
+                .costs = costs_f,
+            };
         }
 
         pub fn getInstance(idx: usize) []const u8 {
@@ -135,13 +152,15 @@ pub fn Least(comptime N: usize) type {
 }
 
 const Point2D = struct {
-    x: f32,
-    y: f32,
+    x: f16,
+    y: f16,
 
-    pub fn distance_to(self: Point2D, other: Point2D) f32 {
+    pub fn distance_to(self: Point2D, other: Point2D) f16 {
         const dx = other.x - self.x;
         const dy = other.y - self.y;
 
         return std.math.hypot(dx, dy);
     }
 };
+
+// TODO: write tests such that SOME of the costs are tested!
