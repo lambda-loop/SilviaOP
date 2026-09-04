@@ -26,6 +26,14 @@ pub fn main(init: std.process.Init) !void {
         print("instance: {any}\n\n", .{pn});
     }
 
+    if (u8 == u8) {
+        print("im working\n", .{});
+    }
+
+    if (u8 == u16) {
+        print("im not working\n", .{});
+    }
+
     // const io = init.io;
     // const gpa = init.gpa;
 
