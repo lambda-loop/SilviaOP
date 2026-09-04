@@ -1,5 +1,6 @@
 //
 
+pub mod heuristic;
 mod matrix;
 mod pos;
 mod route;
@@ -99,3 +100,5 @@ pub fn greedy(problem: &Problem) -> Vec<u8> {
 
     route
 }
+
+//
