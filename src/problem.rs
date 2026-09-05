@@ -3,7 +3,7 @@
 pub mod heuristic;
 mod matrix;
 mod pos;
-mod route;
+pub mod route;
 
 use matrix::SquareMatrix;
 use pos::Node as Pos2D;

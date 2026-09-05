@@ -3,7 +3,7 @@
 // simple heuristic: only cares about comparing between two by using at most
 //  both the cost and the score, but no context yet
 
-use crate::problem::Problem;
+use crate::problem::{Problem, RouteStatus};
 use std::cmp::Ordering;
 use std::collections::HashSet as Set;
 
@@ -43,13 +43,83 @@ pub fn simple_heuristic(
     route
 }
 
+// just fills the already passing points cause why not?
+// ure already there, u know?
+
+pub fn since_you_already(problem: &Problem, mut r: Vec<u8>) -> Vec<u8> {
+    // let r_len = r.len();
+    let costs = &problem.costs;
+    let mut unvisited = Set::<u8>::new();
+    // FIX: its bad..
+    for i in 2..problem.len {
+        unvisited.insert(i as u8);
+    }
+
+    for &p in r.iter() {
+        unvisited.remove(&p);
+    }
+
+    let tmax = problem.tmax;
+    let RouteStatus {
+        total_consume: mut cost,
+        ..
+    } = problem.eval_route(&r);
+
+    loop {
+        let mut new_mid = None;
+        'blk: for i in 0..r.len() - 1 {
+            let from = r[i] as usize;
+            let to = r[i + 1] as usize;
+
+            for &mid_ in unvisited.iter() {
+                let mid = mid_ as usize;
+                let new_cost = cost + costs[(from, mid)] + costs[(mid, to)] - costs[(from, to)];
+                if new_cost <= tmax {
+                    new_mid = Some((i + 1, mid_, new_cost));
+                    break 'blk;
+                }
+            }
+        }
+
+        if let Some((i, mid, new_cost)) = new_mid {
+            r.insert(i, mid);
+            unvisited.remove(&mid);
+            cost = new_cost;
+        } else {
+            break;
+        }
+    }
+
+    r
+}
+
 pub fn apply_all(p: &Problem) -> Vec<(String, Vec<u8>)> {
     let mut out = Vec::new();
     out.push((String::from("greedy"), simple_heuristic(p, greedy)));
+    out.push((
+        String::from("greedy-fixed"),
+        since_you_already(p, simple_heuristic(p, greedy)),
+    ));
     out.push((String::from("lazy"), simple_heuristic(p, lazy)));
+    out.push((
+        String::from("lazy-fixed"),
+        since_you_already(p, simple_heuristic(p, lazy)),
+    ));
     out.push((String::from("smart"), simple_heuristic(p, smart)));
+    out.push((
+        String::from("smart-fixed"),
+        since_you_already(p, simple_heuristic(p, smart)),
+    ));
     out.push((String::from("wise"), simple_heuristic(p, wise)));
+    out.push((
+        String::from("wise-fixed"),
+        since_you_already(p, simple_heuristic(p, wise)),
+    ));
     out.push((String::from("envy"), simple_heuristic(p, envy)));
+    out.push((
+        String::from("envy-fixed"),
+        since_you_already(p, simple_heuristic(p, envy)),
+    ));
     out
 }
 

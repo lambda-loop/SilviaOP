@@ -7,11 +7,20 @@ pub struct SquareMatrix<T> {
     len: usize,
 }
 
-impl<T: Default + Clone> SquareMatrix<T> {
+impl<T: Clone> SquareMatrix<T> {
     pub fn len(&self) -> usize {
         self.len
     }
 
+    pub fn clone(&self) -> Self {
+        SquareMatrix {
+            data: self.data.clone(),
+            len: self.len,
+        }
+    }
+}
+
+impl<T: Default + Clone> SquareMatrix<T> {
     pub fn new(size: usize) -> Self {
         SquareMatrix {
             data: vec![T::default(); size * size],
