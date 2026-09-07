@@ -1,63 +1,39 @@
 use std::fs;
 
 mod problem;
-use problem::Problem;
-use problem::heuristic as h;
-
 mod rendering;
-use rendering::{Map, window_conf};
+
+use problem::Problem;
+use problem::heuristic;
+use problem::heuristic::*;
+
+use problem::metaheuristics::simulated_annealing as sa;
+use rendering::sa::Voyeur;
+use rendering::window_conf;
+use rendering::Point;
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    // let mut out = None;
+    let raw_input =
+        // fs::read_to_string("data/set_64_1_60.txt").unwrap();
+        // fs::read_to_string("data/tsiligirides_problem_3_budget_045.txt").unwrap();
+        fs::read_to_string("data/tsiligirides_problem_2_budget_32.txt").unwrap();
 
-    let dir = fs::read_dir("data").expect("data dir");
-    let mut maps = Vec::new();
+    let problem = Problem::new(&raw_input);
 
-    for entry in dir {
-        if let Ok(dir_entry) = entry {
-            let path = dir_entry.path();
+    let initial = simple_heuristic(&problem, greedy);
+    let initial = since_you_already_best(&problem, initial);
 
-            if path.extension().is_some_and(|ext| ext == "txt") {
-                let input = fs::read_to_string(path).unwrap();
+    let unvisited = (2..problem.len as u8).collect();
 
-                let p = Problem::new(&input);
+    let points = Point::problem(&raw_input);
 
-                let points = rendering::Point::problem(&input);
+    let mut state = sa::State::new(
+        problem,
+        initial.clone(),
+        unvisited,
+        points,
+    );
 
-                let routes = problem::heuristic::apply_all(&p);
-
-                for (method, route) in routes {
-                    let status = p.eval_route(&route);
-                    let title = format!("{:?} - {}", dir_entry.file_name(), method);
-
-
-                let map = Map {
-                    route,
-                    points: points.clone(),
-                    tmax: p.tmax,
-                    used_cost: status.total_consume,
-                    name: title,
-                    score: status.total_score,
-                };
-
-                maps.push(map);
-                    
-                }
-
-                // let status = p.eval_route(&route);
-                // let method = "Greedy".to_string();
-                // let title = format!("{:?} - {}", dir_entry.file_name(), method);
-
-            } else {
-                println!("{:?}", path);
-            }
-        }
-    }
-
-    // let map = out.unwrap();
-
-    rendering::Renderer::new(maps)
-        .run()
-        .await;
+    state.run(&raw_input, initial).await;
 }

@@ -1,15 +1,7 @@
 //
-
+pub mod sa;
+use sa::Map;
 // AI GENERATED: (causes just a auxiliar and not acctally the ureal project)
-#[derive(Debug, Clone)]
-pub struct Map {
-    pub route: Vec<u8>,
-    pub points: Vec<Point>,
-    pub tmax: f32,
-    pub used_cost: f32,
-    pub name: String,
-    pub score: u16,
-}
 
 #[derive(Debug, Copy, Clone)]
 pub struct Point {
@@ -57,6 +49,7 @@ pub fn window_conf() -> Conf {
     }
 }
 
+#[derive(Debug, Clone)]
 struct View {
     min_x: f32,
     min_y: f32,
@@ -317,82 +310,98 @@ impl Renderer {
             WHITE,
         );
     }
+fn draw_info(&self, map: &Map) {
+    let font_size = 24.0;
 
-    fn draw_info(&self, map: &Map) {
-        // ============================================================
-        // Nome — centro superior
-        // ============================================================
+    let title_dims = measure_text(
+        &map.title,
+        None,
+        font_size as u16,
+        1.0,
+    );
 
-        let font_size = 24.0;
+    let title_x =
+        (screen_width() - title_dims.width) / 2.0;
 
-        let name_dims = measure_text(
-            &map.name,
-            None,
-            font_size as u16,
-            1.0,
-        );
+    draw_text(
+        &map.title,
+        title_x,
+        30.0,
+        font_size,
+        WHITE,
+    );
 
-        let name_x =
-            (screen_width() - name_dims.width) / 2.0;
+    let score_text =
+        format!("Score: {}", map.score);
 
-        draw_text(
-            &map.name,
-            name_x,
-            30.0,
-            font_size,
-            WHITE,
-        );
+    draw_text(
+        &score_text,
+        20.0,
+        screen_height() - 50.0,
+        20.0,
+        WHITE,
+    );
 
-        // ============================================================
-        // Score — canto inferior esquerdo
-        // ============================================================
+    let cost_text =
+        format!("{:.2} / {:.2}", map.used_cost, map.tmax);
 
-        let score_text =
-            format!("Score: {}", map.score);
+    let cost_dims = measure_text(
+        &cost_text,
+        None,
+        20,
+        1.0,
+    );
 
-        draw_text(
-            &score_text,
-            20.0,
-            screen_height() - 20.0,
-            20.0,
-            WHITE,
-        );
+    let cost_x =
+        screen_width() - cost_dims.width - 20.0;
 
-        // ============================================================
-        // used_cost / tmax — canto inferior direito
-        // ============================================================
+    let cost_color =
+        if map.used_cost <= map.tmax {
+            GREEN
+        } else {
+            RED
+        };
 
-        let cost_text =
-            format!(
-                "{:.2} / {:.2}",
-                map.used_cost,
-                map.tmax
-            );
+    draw_text(
+        &cost_text,
+        cost_x,
+        screen_height() - 50.0,
+        20.0,
+        cost_color,
+    );
 
-        let cost_dims = measure_text(
-            &cost_text,
-            None,
-            20,
-            1.0,
-        );
+    let iteration_text =
+        format!("Iteration: {}", map.iteration);
 
-        let cost_x =
-            screen_width() - cost_dims.width - 20.0;
+    draw_text(
+        &iteration_text,
+        20.0,
+        screen_height() - 20.0,
+        20.0,
+        WHITE,
+    );
 
-        let cost_color =
-            if map.used_cost <= map.tmax {
-                GREEN
-            } else {
-                RED
-            };
+    let temperature_text =
+        format!("Temperature: {:.4}", map.temperature);
 
-        draw_text(
-            &cost_text,
-            cost_x,
-            screen_height() - 20.0,
-            20.0,
-            cost_color,
-        );
-    }
+    let temperature_dims = measure_text(
+        &temperature_text,
+        None,
+        20,
+        1.0,
+    );
+
+    let temperature_x =
+        (screen_width() - temperature_dims.width) / 2.0;
+
+    draw_text(
+        &temperature_text,
+        temperature_x,
+        screen_height() - 20.0,
+        20.0,
+        WHITE,
+    );
+}
+
 }
 
