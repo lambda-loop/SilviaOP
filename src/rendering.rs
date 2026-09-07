@@ -1,53 +1,15 @@
 //
+pub mod point;
+pub mod renderer;
+pub mod view;
 pub mod sa;
 use sa::Map;
 // AI GENERATED: (causes just a auxiliar and not acctally the ureal project)
 
-#[derive(Debug, Copy, Clone)]
-pub struct Point {
-    pub x: f32,
-    pub y: f32,
-    pub score: u16,
-}
-
-impl Point {
-    pub fn parse(line: &str) -> Self {
-        let mut iter = line.split_ascii_whitespace();
-
-        let x = iter.next().unwrap().parse::<f32>().unwrap();
-        let y = iter.next().unwrap().parse::<f32>().unwrap();
-        let score = iter.next().unwrap().parse::<u16>().unwrap();
-
-        Self { x, y, score }
-    }
-
-    pub fn problem(raw_input: &str) -> Vec<Point> {
-        let mut lines = raw_input.lines();
-
-        _ = lines.next();
-
-        let mut points = Vec::new();
-
-        for line in lines {
-            let point = Point::parse(line);
-            points.push(point);
-        }
-
-        points
-    }
-}
+use point::Point;
 
 use macroquad::prelude::*;
 
-pub fn window_conf() -> Conf {
-    Conf {
-        window_title: "Visualizador de Caminho".to_owned(),
-        window_width: 800,
-        window_height: 600,
-        window_resizable: true,
-        ..Default::default()
-    }
-}
 
 #[derive(Debug, Clone)]
 struct View {
