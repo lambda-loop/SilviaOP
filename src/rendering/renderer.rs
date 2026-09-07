@@ -92,7 +92,6 @@ impl Renderer {
     }
 
     // TODO: do i really care about reusing this ?
-
     fn draw_special_point(&self, map: &Map, idx: u8) {
         let p = &map.points[idx as usize];
         let (x, y) = self.view.to_screen(p.x, p.y);
