@@ -17,9 +17,9 @@ pub struct State {
     best_score: u16,
     best_consume: f32,
 
-    current_value: f32,
+    current_value: f32, // ??
 
-    temp: f32,
+    current_temp: f32,
     initial_temp: f32,
     cooling: f32,
     min_temp: f32,
@@ -29,16 +29,11 @@ pub struct State {
 
     unvisited: HashSet<u8>,
 
-    points: Vec<Point>,
+    // points: Vec<Point>,
     iteration: usize,
 }
 impl State {
-    pub fn new(
-        problem: Problem,
-        initial: Vec<u8>,
-        unvisited: HashSet<u8>,
-        points: Vec<Point>,
-    ) -> Self {
+    pub fn new(problem: Problem, initial: Vec<u8>, unvisited: HashSet<u8>) -> Self {
         let status = problem.eval_route(&initial);
 
         let initial_temp = 100.0;
