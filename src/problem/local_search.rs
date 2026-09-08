@@ -1,11 +1,15 @@
+// im doing the change inside the local searchs provided a way to choose if the change will or not be performed after all.
+
 use std::collections::HashSet;
 
-pub fn swap(r: &[u8]) -> Vec<u8> {
+type Validator = fn(&[u8]) -> bool;
+
+pub fn swap(r: &mut Vec<u8>, p: Validator) {
     if r.len() < 2 {
-        return r.to_vec();
+        return;
     }
 
-    let mut candidate = r.to_vec();
+    let mut candidate = r.clone();
 
     let i = rand::random_range(0..candidate.len());
     let mut j = rand::random_range(0..candidate.len());
@@ -15,28 +19,31 @@ pub fn swap(r: &[u8]) -> Vec<u8> {
     }
 
     candidate.swap(i, j);
-
-    candidate
+    if p(&candidate) {
+        *r = candidate;
+    }
 }
 
-pub fn two_opt(r: &[u8]) -> Vec<u8> {
+pub fn two_opt(r: &mut Vec<u8>, p: Validator) {
     if r.len() < 2 {
-        return r.to_vec();
+        return;
     }
 
-    let mut candidate = r.to_vec();
+    let mut candidate = r.clone();
 
     let i = rand::random_range(0..candidate.len());
     let j = rand::random_range(i..candidate.len());
 
     candidate[i..=j].reverse();
 
-    candidate
+    if p(&candidate) {
+        *r = candidate
+    }
 }
 
-pub fn relocate(r: &[u8]) -> Vec<u8> {
+pub fn relocate(r: &mut Vec<u8>, p: Validator) {
     if r.len() < 2 {
-        return r.to_vec();
+        return;
     }
 
     let mut candidate = r.to_vec();
@@ -47,60 +54,60 @@ pub fn relocate(r: &[u8]) -> Vec<u8> {
     let j = rand::random_range(0..=candidate.len());
     candidate.insert(j, x);
 
-    candidate
+    if p(&candidate) {
+        *r = candidate;
+    }
 }
 
-pub fn insert(r: &[u8], unvisited: &HashSet<u8>, max: u8) -> (Vec<u8>, HashSet<u8>) {
-    let mut candidate = r.to_vec();
-    let mut candidate_unvisited = unvisited.clone();
-
-    if candidate_unvisited.is_empty() {
-        return (candidate, candidate_unvisited);
+pub fn insert(r: &mut Vec<u8>, unvisited: &mut HashSet<u8>, max: u8, p: Validator) {
+    let mut candidate = r.clone();
+    if unvisited.is_empty() {
+        return;
     }
 
     let x = loop {
         let x = rand::random_range(0..max);
 
-        if candidate_unvisited.contains(&x) {
+        if unvisited.contains(&x) {
             break x;
         }
     };
 
     let i = rand::random_range(0..=candidate.len());
-
     candidate.insert(i, x);
-    candidate_unvisited.remove(&x);
 
-    (candidate, candidate_unvisited)
+    if p(&candidate) {
+        unvisited.remove(&x);
+        *r = candidate;
+    }
 }
 
-pub fn remove(r: &[u8], unvisited: &HashSet<u8>) -> (Vec<u8>, HashSet<u8>) {
-    let mut candidate = r.to_vec();
-    let mut candidate_unvisited = unvisited.clone();
+pub fn remove(r: &mut Vec<u8>, unvisited: &mut HashSet<u8>, p: Validator) {
+    let mut candidate = r.clone();
 
     if candidate.len() <= 1 {
-        return (candidate, candidate_unvisited);
+        return;
     }
 
     let i = rand::random_range(0..candidate.len());
     let x = candidate.remove(i);
 
-    candidate_unvisited.insert(x);
-
-    (candidate, candidate_unvisited)
+    if p(&candidate) {
+        *r = candidate;
+        unvisited.insert(x);
+    }
 }
-pub fn replace(r: &[u8], unvisited: &HashSet<u8>, max: u8) -> (Vec<u8>, HashSet<u8>) {
-    let mut candidate = r.to_vec();
-    let mut candidate_unvisited = unvisited.clone();
+pub fn replace(r: &mut Vec<u8>, unvisited: &mut HashSet<u8>, max: u8, p: Validator) {
+    let mut candidate = r.clone();
 
-    if candidate.is_empty() || candidate_unvisited.is_empty() {
-        return (candidate, candidate_unvisited);
+    if candidate.is_empty() || unvisited.is_empty() {
+        return;
     }
 
     let x = loop {
         let x = rand::random_range(0..max);
 
-        if candidate_unvisited.contains(&x) {
+        if unvisited.contains(&x) {
             break x;
         }
     };
@@ -108,8 +115,9 @@ pub fn replace(r: &[u8], unvisited: &HashSet<u8>, max: u8) -> (Vec<u8>, HashSet<
     let i = rand::random_range(0..candidate.len());
     let old = std::mem::replace(&mut candidate[i], x);
 
-    candidate_unvisited.remove(&x);
-    candidate_unvisited.insert(old);
-
-    (candidate, candidate_unvisited)
+    if p(&candidate) {
+        unvisited.remove(&x);
+        unvisited.insert(old);
+        *r = candidate;
+    }
 }
