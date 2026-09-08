@@ -10,12 +10,11 @@ pub struct State {
     problem: Problem,
 
     current: Vec<u8>,
-    best: Vec<u8>,
-
     current_score: u16,
-    best_score: u16,
-
     current_consume: f32,
+
+    best: Vec<u8>,
+    best_score: u16,
     best_consume: f32,
 
     current_value: f32,
