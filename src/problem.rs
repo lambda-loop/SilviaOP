@@ -1,7 +1,7 @@
 //
 
 pub mod heuristic;
-pub mod local_search;
+// pub mod local_search;
 mod matrix;
 // pub mod metaheuristics;
 mod pos;

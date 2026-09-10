@@ -1,123 +1,49 @@
-// im doing the change inside the local searchs provided a way to choose if the change will or not be performed after all.
+//
+use crate::problem::Problem;
 
 use std::collections::HashSet;
 
-type Validator = fn(&[u8]) -> bool;
+use super::route::RouteStatus;
+use std::cmp::Ordering;
 
-pub fn swap(r: &mut Vec<u8>, p: Validator) {
-    if r.len() < 2 {
-        return;
-    }
+pub fn simple_best_insertion_by(
+    p: &Problem,
+    r: &mut Vec<u8>,
+    unvisited: &mut HashSet<u8>,
+    strategy: fn(&RouteStatus, &RouteStatus) -> Ordering,
+) -> bool {
+    let mut best: Option<(u8, usize, RouteStatus)> = None;
 
-    let mut candidate = r.clone();
+    let mut new_r = Vec::with_capacity(r.len() + 1);
+    for k in 0..=r.len() {
+        for &u in unvisited.iter() {
+            new_r.clear();
+            new_r.extend_from_slice(r);
+            new_r.insert(k, u);
 
-    let i = rand::random_range(0..candidate.len());
-    let mut j = rand::random_range(0..candidate.len());
+            let sts = p.eval_route(&new_r);
 
-    while i == j {
-        j = rand::random_range(0..candidate.len());
-    }
+            if sts.total_consume > p.tmax {
+                continue;
+            }
 
-    candidate.swap(i, j);
-    if p(&candidate) {
-        *r = candidate;
-    }
-}
-
-pub fn two_opt(r: &mut Vec<u8>, p: Validator) {
-    if r.len() < 2 {
-        return;
-    }
-
-    let mut candidate = r.clone();
-
-    let i = rand::random_range(0..candidate.len());
-    let j = rand::random_range(i..candidate.len());
-
-    candidate[i..=j].reverse();
-
-    if p(&candidate) {
-        *r = candidate
-    }
-}
-
-pub fn relocate(r: &mut Vec<u8>, p: Validator) {
-    if r.len() < 2 {
-        return;
-    }
-
-    let mut candidate = r.to_vec();
-
-    let i = rand::random_range(0..candidate.len());
-    let x = candidate.remove(i);
-
-    let j = rand::random_range(0..=candidate.len());
-    candidate.insert(j, x);
-
-    if p(&candidate) {
-        *r = candidate;
-    }
-}
-
-pub fn insert(r: &mut Vec<u8>, unvisited: &mut HashSet<u8>, max: u8, p: Validator) {
-    let mut candidate = r.clone();
-    if unvisited.is_empty() {
-        return;
-    }
-
-    let x = loop {
-        let x = rand::random_range(0..max);
-
-        if unvisited.contains(&x) {
-            break x;
+            match &best {
+                None => best = Some((u, k, sts)),
+                Some((_, _, best_sts)) => {
+                    if strategy(&sts, best_sts) == Ordering::Less {
+                        best = Some((u, k, sts));
+                    }
+                }
+            }
         }
-    };
-
-    let i = rand::random_range(0..=candidate.len());
-    candidate.insert(i, x);
-
-    if p(&candidate) {
-        unvisited.remove(&x);
-        *r = candidate;
-    }
-}
-
-pub fn remove(r: &mut Vec<u8>, unvisited: &mut HashSet<u8>, p: Validator) {
-    let mut candidate = r.clone();
-
-    if candidate.len() <= 1 {
-        return;
     }
 
-    let i = rand::random_range(0..candidate.len());
-    let x = candidate.remove(i);
-
-    if p(&candidate) {
-        *r = candidate;
-        unvisited.insert(x);
-    }
-}
-pub fn replace(r: &mut Vec<u8>, unvisited: &mut HashSet<u8>, max: u8, p: Validator) {
-    let mut candidate = r.clone();
-
-    if candidate.is_empty() || unvisited.is_empty() {
-        return;
-    }
-
-    let x = loop {
-        let x = rand::random_range(0..max);
-
-        if unvisited.contains(&x) {
-            break x;
+    match best {
+        None => false,
+        Some((u, k, _)) => {
+            r.insert(k, u);
+            unvisited.remove(&u);
+            true
         }
-    };
-
-    let i = rand::random_range(0..candidate.len());
-    let old = std::mem::replace(&mut candidate[i], x);
-
-    if p(&candidate) {
-        unvisited.remove(&x);
-        unvisited.insert(old);
-        *r = candidate;
     }
 }

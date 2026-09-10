@@ -3,41 +3,62 @@ use std::fs;
 mod problem;
 mod rendering;
 
-use problem::Problem;
 use problem::heuristic;
 use problem::heuristic::*;
+use problem::Problem;
 
 // use problem::metaheuristics::simulated_annealing as sa;
 // use rendering::sa::Voyeur;
 // use rendering::window_conf;
 
-
-use rendering::renderer::*;
-use rendering::point::*;
-use macroquad::prelude::Conf;
+use macroquad::prelude::{is_key_pressed, Conf, KeyCode};
 use macroquad::window::*;
+use rendering::point::*;
+use rendering::renderer::*;
 
-#[macroquad::main(window_conf)]
-async fn main() {
-    let raw_input = fs::read_to_string("data/set_64_1_15.txt").unwrap();
+use problem::heuristic::run_multi_experiment;
+use problem::heuristic::strategy::greedy;
+use problem::heuristic::strategy::smart;
+
+// #[macroquad::main(window_conf)]
+// async fn main() {
+
+fn main() {
+    let dir = fs::read_dir("data").unwrap();
+    for file in dir {
+        let file = file.unwrap();
+        let problem_name = file.file_name().clone().into_string().unwrap();
+        println!("{}", problem_name);
+    }
+
+    let raw_input = fs::read_to_string("data/set_64_1_65.txt").unwrap();
     let problem = Problem::new(&raw_input);
     let points = Point::parse_all(&raw_input);
 
+    let ers = run_single_experiment(&problem, "64".to_string(), greedy, "greedy".to_string());
+    println!("{}", ers.to_csv());
+    let r = run_single(&problem, greedy);
+    let sts = problem.eval_route(&r);
+    println!("{}", r.len());
+
     let map = Map {
-        route: vec![],
-        points, tmax: problem.tmax,
-        used_cost: 0.,
+        route: r,
+        points,
+        tmax: problem.tmax,
+        used_cost: sts.total_consume,
         title: "".to_string(),
-        route_score: 0,
+        route_score: sts.total_score,
     };
 
-    let renderer = Renderer::new(map);
-    loop {
-        renderer.draw();
-        next_frame().await;
-    }
-    
-    
+    // let renderer = Renderer::new(map);
+    // loop {
+    //     if is_key_pressed(KeyCode::Q) {
+    //         break;
+    //     }
+
+    //     renderer.draw();
+    //     next_frame().await;
+    // }
 }
 
 pub fn window_conf() -> Conf {
