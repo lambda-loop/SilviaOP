@@ -27,8 +27,23 @@ fn main() {
     let dir = fs::read_dir("data").unwrap();
     for file in dir {
         let file = file.unwrap();
+        if !file.file_type().unwrap().is_file() {
+            continue;
+        };
+
         let problem_name = file.file_name().clone().into_string().unwrap();
+        if !problem_name.ends_with(".txt") {
+            continue;
+        }
+
+        let raw_input = fs::read_to_string(file.path()).unwrap();
+        let problem = Problem::new(&raw_input);
+
         println!("{}", problem_name);
+
+        let ers = one_experiment(&problem, &problem_name);
+
+        // println!("{:?}", &ers);
     }
 
     let raw_input = fs::read_to_string("data/set_64_1_65.txt").unwrap();

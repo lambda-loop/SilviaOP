@@ -116,3 +116,18 @@ pub fn run_multi_experiment(
 
     ers
 }
+
+const NTIMES: usize = 10;
+
+// with single valued strategies
+pub fn one_experiment(p: &Problem, p_name: &str) -> Vec<ER> {
+    let mut exp_ress = Vec::new();
+    for (&f, &m) in strategy::ALL.iter().zip(strategy::METHODS.iter()) {
+        for _ in 0..NTIMES {
+            let exp_res = run_single_experiment(p, p_name.to_string(), f, m.to_string());
+            exp_ress.push(exp_res);
+        }
+    }
+
+    exp_ress
+}

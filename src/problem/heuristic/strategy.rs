@@ -5,6 +5,7 @@ use std::cmp::Ordering;
 
 pub type StrategyFn = fn(&RouteStatus, &RouteStatus) -> Ordering;
 pub const ALL: &[StrategyFn] = &[greedy, lazy, smart, wise, envy];
+pub const METHODS: [&str; 5] = ["greedy", "lazy", "smart", "wise", "envy"];
 
 pub fn greedy(l: &RouteStatus, r: &RouteStatus) -> Ordering {
     r.total_score.cmp(&l.total_score)
