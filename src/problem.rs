@@ -15,7 +15,7 @@ use route::*;
 pub struct Problem {
     pub tmax: f32,
     pub costs: SquareMatrix<f32>,
-    pub scores: Vec<u16>,
+    pub scores: Vec<u32>,
     pub len: usize, // num_points
 }
 
@@ -54,7 +54,7 @@ impl Problem {
 
     pub fn eval_route(&self, r: &[u8]) -> RouteStatus {
         let r_len = r.len();
-        let mut total_score: u16 = r.iter().map(|&p| self.scores[p as usize]).sum();
+        let mut total_score: u32 = r.iter().map(|&p| self.scores[p as usize]).sum();
         let mut total_consume = 0.;
 
         total_consume += self.costs[(0, r[0] as usize)];

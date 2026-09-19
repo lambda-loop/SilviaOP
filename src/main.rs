@@ -23,8 +23,18 @@ use problem::heuristic::strategy::smart;
 // #[macroquad::main(window_conf)]
 // async fn main() {
 
+use std::sync::mpsc;
+use std::sync::mpsc::{Receiver, Sender};
+use std::thread;
+
+use crossbeam_channel::unbounded as uchan;
+
 fn main() {
     let dir = fs::read_dir("data").unwrap();
+    // let mut all_ers = Vec::new();
+
+    let (tp, rp) = uchan();
+    let (tr, rr) = mpsc::channel();
     for file in dir {
         let file = file.unwrap();
         if !file.file_type().unwrap().is_file() {
@@ -39,41 +49,55 @@ fn main() {
         let raw_input = fs::read_to_string(file.path()).unwrap();
         let problem = Problem::new(&raw_input);
 
-        println!("{}", problem_name);
+        tp.send((problem_name, problem));
+        // println!("{}", problem_name);
 
-        let ers = one_experiment(&problem, &problem_name);
+        // let ers: Vec<_> = multi_results(&problem, &problem_name)
+        //     .iter()
+        //     .map(|er| er.to_csv())
+        //     .collect();
+    }
+    drop(tp);
 
-        // println!("{:?}", &ers);
+    let mut handles = Vec::new();
+
+    for _ in 0..12 {
+        let rp = rp.clone();
+        let tr = tr.clone();
+
+        let handle = thread::spawn(move || {
+            while let Ok((problem_name, problem)) = rp.recv() {
+                let ers: Vec<_> = multi_results(&problem, &problem_name)
+                    .iter()
+                    .map(|er| er.to_csv())
+                    .collect();
+
+                tr.send(ers).unwrap();
+            }
+        });
+
+        handles.push(handle);
     }
 
-    let raw_input = fs::read_to_string("data/set_64_1_65.txt").unwrap();
-    let problem = Problem::new(&raw_input);
-    let points = Point::parse_all(&raw_input);
+    drop(rp);
+    drop(tr);
 
-    let ers = run_single_experiment(&problem, "64".to_string(), greedy, "greedy".to_string());
-    println!("{}", ers.to_csv());
-    let r = run_single(&problem, greedy);
-    let sts = problem.eval_route(&r);
-    println!("{}", r.len());
+    for handle in handles {
+        handle.join().unwrap();
+    }
 
-    let map = Map {
-        route: r,
-        points,
-        tmax: problem.tmax,
-        used_cost: sts.total_consume,
-        title: "".to_string(),
-        route_score: sts.total_score,
-    };
+    let header = heuristic::EResult::header();
+    let mut content = Vec::new();
 
-    // let renderer = Renderer::new(map);
-    // loop {
-    //     if is_key_pressed(KeyCode::Q) {
-    //         break;
-    //     }
+    content.push(format!("{header}\n"));
 
-    //     renderer.draw();
-    //     next_frame().await;
-    // }
+    while let Ok(lines) = rr.recv() {
+        for line in lines {
+            content.push(format!("{line}\n"));
+        }
+    }
+
+    fs::write("out2.csv", content.concat()).unwrap();
 }
 
 pub fn window_conf() -> Conf {

@@ -10,7 +10,7 @@ pub struct Map {
     pub tmax: f32,
     pub used_cost: f32,
     pub title: String,
-    pub route_score: u16,
+    pub route_score: u32,
     // additional info
 }
 

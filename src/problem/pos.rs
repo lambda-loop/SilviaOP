@@ -3,7 +3,7 @@
 pub struct Node {
     x: f32,
     y: f32,
-    pub score: u16,
+    pub score: u32,
 }
 
 impl Node {
@@ -18,7 +18,7 @@ impl Node {
         let mut iter = line.split_ascii_whitespace();
         let x = iter.next().unwrap().parse::<f32>().unwrap();
         let y = iter.next().unwrap().parse::<f32>().unwrap();
-        let score = iter.next().unwrap().parse::<u16>().unwrap();
+        let score = iter.next().unwrap().parse::<u32>().unwrap();
 
         Self { x, y, score }
     }
