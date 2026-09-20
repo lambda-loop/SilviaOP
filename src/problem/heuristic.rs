@@ -204,14 +204,19 @@ pub fn run_single_experiment(
 // Experiment specifications
 // -----------------------------------------------------------------------------
 //
-// For this experiment we intentionally run ONLY the two elementary families:
+// RANDOMIZED-ONLY BATTERY.
 //
-//   marginal_* : uses ΔS and ΔC
-//   total_*    : reproduces the old S(R') and C(R') formulation
+// The deterministic marginal_* and total_* methods were already evaluated in
+// the previous experiment. This battery isolates the stochastic mechanisms:
 //
-// Randomized/composite selectors remain available in strategy.rs, but are
-// intentionally not included here yet. This lets us first identify the
-// strongest elementary strategies from each family.
+//   1. true uniform random feasible insertion;
+//   2. random pairwise comparison;
+//   3. criterion resampling at every pairwise comparison;
+//   4. criterion resampling once per construction step;
+//   5. the selected three-strategy random family;
+//   6. quality-weighted roulette over the selected strategies;
+//   7. every pair/triple/full mixed combination of the selected strategies
+//      plus the pure random comparator.
 //
 
 #[derive(Clone)]
@@ -225,76 +230,152 @@ pub fn experiment_specs() -> Vec<ExperimentSpec> {
     use strategy::{
         marginal_envy,
         marginal_wise,
+        mixed_random_marginal_comparison,
+        mixed_random_total_comparison,
+        random_comparison,
         total_envy,
         MARGINAL_ALL,
-        MARGINAL_METHODS,
+        RANDOM_COMBINATION_POOL,
         SELECTED_POOL,
+        SELECTED_WEIGHTED_POOL,
         TOTAL_ALL,
-        TOTAL_METHODS,
     };
 
     let mut specs =
-        Vec::with_capacity(
-            MARGINAL_ALL.len()
-                + TOTAL_ALL.len()
-                + 5
-        );
+        Vec::new();
 
 
-    // -------------------------------------------------------------------------
-    // Marginal family
-    // -------------------------------------------------------------------------
+    // =========================================================================
+    // 1. Pure-random baselines
+    // =========================================================================
 
-    for (&strategy, &name) in
-        MARGINAL_ALL
-            .iter()
-            .zip(MARGINAL_METHODS.iter())
-    {
-        specs.push(
-            ExperimentSpec {
-                name:
-                    name.to_string(),
+    // TRUE random construction:
+    // uniformly sample one feasible (vertex, position) insertion and repeat
+    // until no feasible insertion remains.
+    specs.push(
+        ExperimentSpec {
+            name:
+                "random_feasible_insertion".into(),
 
-                selector:
-                    Selector::By(strategy),
-            }
-        );
-    }
+            selector:
+                Selector::Random,
+        }
+    );
 
 
-    // -------------------------------------------------------------------------
-    // Total / legacy family
-    // -------------------------------------------------------------------------
-
-    for (&strategy, &name) in
-        TOTAL_ALL
-            .iter()
-            .zip(TOTAL_METHODS.iter())
-    {
-        specs.push(
-            ExperimentSpec {
-                name:
-                    name.to_string(),
-
-                selector:
-                    Selector::By(strategy),
-            }
-        );
-    }
-
-
-    // -------------------------------------------------------------------------
-    // Final selected random family
+    // Random A-vs-B comparator.
     //
-    // At every construction step, one criterion is selected from:
-    //
-    //   marginal_envy
-    //   total_envy
-    //   marginal_wise
-    //
-    // -------------------------------------------------------------------------
+    // This is deliberately NOT the same distribution as Selector::Random:
+    // candidate selection occurs through a sequential random tournament.
+    specs.push(
+        ExperimentSpec {
+            name:
+                "random_pairwise".into(),
 
-    // Keeps the original implicit tie behavior.
+            selector:
+                Selector::By(
+                    random_comparison
+                ),
+        }
+    );
+
+
+    // =========================================================================
+    // 2. Criterion changes at EVERY pairwise comparison
+    // =========================================================================
+
+    specs.push(
+        ExperimentSpec {
+            name:
+                "mixed_random_marginal_all".into(),
+
+            selector:
+                Selector::By(
+                    mixed_random_marginal_comparison
+                ),
+        }
+    );
+
+
+    specs.push(
+        ExperimentSpec {
+            name:
+                "mixed_random_total_all".into(),
+
+            selector:
+                Selector::By(
+                    mixed_random_total_comparison
+                ),
+        }
+    );
+
+
+    // =========================================================================
+    // 3. One uniformly random criterion per construction step
+    // =========================================================================
+
+    specs.push(
+        ExperimentSpec {
+            name:
+                "random_step_marginal_all".into(),
+
+            selector:
+                Selector::RandomCriterion(
+                    MARGINAL_ALL
+                ),
+        }
+    );
+
+
+    specs.push(
+        ExperimentSpec {
+            name:
+                "random_step_marginal_all_random_tie".into(),
+
+            selector:
+                Selector::RandomCriterionRandomTie(
+                    MARGINAL_ALL
+                ),
+        }
+    );
+
+
+    specs.push(
+        ExperimentSpec {
+            name:
+                "random_step_total_all".into(),
+
+            selector:
+                Selector::RandomCriterion(
+                    TOTAL_ALL
+                ),
+        }
+    );
+
+
+    specs.push(
+        ExperimentSpec {
+            name:
+                "random_step_total_all_random_tie".into(),
+
+            selector:
+                Selector::RandomCriterionRandomTie(
+                    TOTAL_ALL
+                ),
+        }
+    );
+
+
+    // =========================================================================
+    // 4. Final selected random family
+    //
+    // Uniform pool:
+    //
+    //     marginal_envy
+    //     total_envy
+    //     marginal_wise
+    // =========================================================================
+
     specs.push(
         ExperimentSpec {
             name:
@@ -302,14 +383,12 @@ pub fn experiment_specs() -> Vec<ExperimentSpec> {
 
             selector:
                 Selector::RandomCriterion(
-                    SELECTED_POOL,
+                    SELECTED_POOL
                 ),
         }
     );
 
 
-    // Same primary random selection, but exact ties are
-    // explicitly broken uniformly at random.
     specs.push(
         ExperimentSpec {
             name:
@@ -317,14 +396,12 @@ pub fn experiment_specs() -> Vec<ExperimentSpec> {
 
             selector:
                 Selector::RandomCriterionRandomTie(
-                    SELECTED_POOL,
+                    SELECTED_POOL
                 ),
         }
     );
 
 
-    // Random primary criterion; marginal_envy breaks primary ties.
-    // If both criteria still tie, the final tie is random.
     specs.push(
         ExperimentSpec {
             name:
@@ -342,8 +419,6 @@ pub fn experiment_specs() -> Vec<ExperimentSpec> {
     );
 
 
-    // Random primary criterion; total_envy breaks primary ties.
-    // If both criteria still tie, the final tie is random.
     specs.push(
         ExperimentSpec {
             name:
@@ -361,8 +436,6 @@ pub fn experiment_specs() -> Vec<ExperimentSpec> {
     );
 
 
-    // Random primary criterion; marginal_wise breaks primary ties.
-    // If both criteria still tie, the final tie is random.
     specs.push(
         ExperimentSpec {
             name:
@@ -378,6 +451,123 @@ pub fn experiment_specs() -> Vec<ExperimentSpec> {
                 },
         }
     );
+
+
+    // =========================================================================
+    // 5. Quality-weighted roulette
+    //
+    // Weights are proportional to the previous aggregate mean relative median
+    // quality. The selected criterion is sampled ONCE per construction step.
+    //
+    // Approximate raw weights currently stored in strategy.rs:
+    //
+    //     total_envy      0.971
+    //     marginal_envy   0.963
+    //     marginal_wise   0.948
+    //
+    // They are intentionally NOT manually normalized: the roulette selector
+    // normalizes by their sum.
+    // =========================================================================
+
+    specs.push(
+        ExperimentSpec {
+            name:
+                "selected_weighted_random".into(),
+
+            selector:
+                Selector::WeightedRandomCriterion(
+                    SELECTED_WEIGHTED_POOL
+                ),
+        }
+    );
+
+
+    // Same weighted roulette, but exact ties under the sampled criterion are
+    // resolved uniformly at random.
+    specs.push(
+        ExperimentSpec {
+            name:
+                "selected_weighted_random_random_tie".into(),
+
+            selector:
+                Selector::WeightedRandomCriterionRandomTie(
+                    SELECTED_WEIGHTED_POOL
+                ),
+        }
+    );
+
+
+    // =========================================================================
+    // 6. Exhaustive mixed combinations
+    //
+    // RANDOM_COMBINATION_POOL contains:
+    //
+    //     marginal_envy
+    //     total_envy
+    //     marginal_wise
+    //     random_comparison
+    //
+    // Every subset of size >= 2 is tested. With four strategies this gives:
+    //
+    //     C(4,2) + C(4,3) + C(4,4) = 6 + 4 + 1 = 11 methods.
+    //
+    // A NEW comparator from the chosen subset is sampled for EVERY pairwise
+    // candidate comparison.
+    // =========================================================================
+
+    let n =
+        RANDOM_COMBINATION_POOL.len();
+
+    assert!(
+        n < usize::BITS as usize,
+        "too many strategies for bit-mask combination generation"
+    );
+
+    let end =
+        1usize << n;
+
+    for mask in 1usize..end {
+        let size =
+            mask.count_ones() as usize;
+
+        if size < 2 {
+            continue;
+        }
+
+        let names:
+            Vec<&'static str> =
+            RANDOM_COMBINATION_POOL
+                .iter()
+                .enumerate()
+                .filter_map(
+                    |(index, strategy)| {
+                        if mask
+                            & (1usize << index)
+                            != 0
+                        {
+                            Some(strategy.name)
+                        } else {
+                            None
+                        }
+                    }
+                )
+                .collect();
+
+        specs.push(
+            ExperimentSpec {
+                name:
+                    format!(
+                        "mixed_each_comparison_{}",
+                        names.join("_")
+                    ),
+
+                selector:
+                    Selector::MixedCriterionMask(
+                        mask
+                    ),
+            }
+        );
+    }
 
 
     specs

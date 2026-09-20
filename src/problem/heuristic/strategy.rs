@@ -39,6 +39,26 @@ type MetricFn =
     fn(&Candidate) -> f64;
 
 
+/// A named comparator used by the exhaustive mixed-random experiments.
+#[derive(Clone, Copy)]
+pub struct NamedStrategy {
+    pub name: &'static str,
+    pub cmp: StrategyFn,
+}
+
+
+/// A comparator with a roulette weight.
+///
+/// The absolute scale of the weights is irrelevant: only their
+/// proportions matter.
+#[derive(Clone, Copy)]
+pub struct WeightedStrategy {
+    pub name: &'static str,
+    pub cmp: StrategyFn,
+    pub weight: f64,
+}
+
+
 // ============================================================================
 // Strategy families
 // ============================================================================
@@ -84,6 +104,69 @@ pub const SELECTED_POOL: &[StrategyFn] = &[
     marginal_envy,
     total_envy,
     marginal_wise,
+];
+
+
+/// Same final pool, but with roulette weights proportional to the
+/// mean relative median quality observed in the previous experiment.
+///
+/// Values were read from the aggregate-quality comparison:
+///
+///     total_envy      ~= 0.971
+///     marginal_envy   ~= 0.963
+///     marginal_wise   ~= 0.948
+///
+/// The roulette code normalizes these values implicitly, so they
+/// correspond approximately to probabilities:
+///
+///     total_envy      33.69%
+///     marginal_envy   33.41%
+///     marginal_wise   32.89%
+///
+/// If exact values from the CSV are available later, only these three
+/// constants need to be updated.
+pub const SELECTED_WEIGHTED_POOL: &[WeightedStrategy] = &[
+    WeightedStrategy {
+        name: "marginal_envy",
+        cmp: marginal_envy,
+        weight: 0.963,
+    },
+    WeightedStrategy {
+        name: "total_envy",
+        cmp: total_envy,
+        weight: 0.971,
+    },
+    WeightedStrategy {
+        name: "marginal_wise",
+        cmp: marginal_wise,
+        weight: 0.948,
+    },
+];
+
+
+/// Pool used by the exhaustive pair/triple/etc. mixed-random tests.
+///
+/// The first three entries are the strategies selected in the previous
+/// stage. The final entry is a genuinely random pairwise comparator.
+///
+/// With four entries, every subset of size >= 2 gives 11 combinations.
+pub const RANDOM_COMBINATION_POOL: &[NamedStrategy] = &[
+    NamedStrategy {
+        name: "marginal_envy",
+        cmp: marginal_envy,
+    },
+    NamedStrategy {
+        name: "total_envy",
+        cmp: total_envy,
+    },
+    NamedStrategy {
+        name: "marginal_wise",
+        cmp: marginal_wise,
+    },
+    NamedStrategy {
+        name: "random",
+        cmp: random_comparison,
+    },
 ];
 
 
@@ -183,6 +266,29 @@ pub enum Selector {
         strategies: &'static [StrategyFn],
         tie_breaker: StrategyFn,
     },
+
+    /// Roulette-wheel version of RandomCriterion.
+    ///
+    /// One criterion is drawn at each construction step with probability
+    /// proportional to its configured weight, and that criterion is used
+    /// consistently throughout the step.
+    WeightedRandomCriterion(
+        &'static [WeightedStrategy]
+    ),
+
+    /// Weighted criterion selection plus uniform random resolution of
+    /// exact ties under the selected criterion.
+    WeightedRandomCriterionRandomTie(
+        &'static [WeightedStrategy]
+    ),
+
+    /// For every pairwise candidate comparison, choose a new comparator
+    /// uniformly from the subset encoded by `mask` in
+    /// RANDOM_COMBINATION_POOL.
+    ///
+    /// This is intentionally non-transitive and therefore must not be
+    /// implemented through sort_by().
+    MixedCriterionMask(usize),
 
     /// Keep the best fraction according to `primary`,
     /// then choose inside that subset using `secondary`.
@@ -644,6 +750,30 @@ pub fn envy(
 // Random comparison strategies
 // ============================================================================
 
+/// Completely random PAIRWISE comparison.
+///
+/// Every time two candidates are compared, one of them is declared
+/// better with probability 1/2.
+///
+/// IMPORTANT:
+/// This is deliberately different from Selector::Random.
+/// Selector::Random samples one feasible insertion uniformly from the
+/// whole candidate set; this function only randomizes an A-vs-B duel.
+///
+/// This comparator is intentionally non-transitive and must NOT be used
+/// with sort_by().
+pub fn random_comparison(
+    _l: &Candidate,
+    _r: &Candidate,
+) -> Ordering {
+    if rand::random::<bool>() {
+        Ordering::Less
+    } else {
+        Ordering::Greater
+    }
+}
+
+
 /// Original peculiar random behavior, but using the NEW
 /// marginal strategy family.
 ///
@@ -757,6 +887,152 @@ fn best_all(
         cmp,
         random_ties,
     )
+}
+
+
+// ============================================================================
+// Randomized selection helpers
+// ============================================================================
+
+/// Draw one strategy by roulette-wheel selection.
+///
+/// Probabilities are proportional to the positive weights.
+fn weighted_random_strategy(
+    strategies: &'static [WeightedStrategy],
+) -> StrategyFn {
+    assert!(
+        !strategies.is_empty()
+    );
+
+    let total_weight =
+        strategies
+            .iter()
+            .map(|s| s.weight.max(0.0))
+            .sum::<f64>();
+
+    assert!(
+        total_weight > 0.0,
+        "weighted strategy pool must contain at least one positive weight"
+    );
+
+    let mut ticket =
+        rand::random::<f64>()
+            * total_weight;
+
+    for strategy in strategies {
+        let weight =
+            strategy.weight.max(0.0);
+
+        if weight == 0.0 {
+            continue;
+        }
+
+        if ticket < weight {
+            return strategy.cmp;
+        }
+
+        ticket -= weight;
+    }
+
+    // Floating-point roundoff fallback.
+    strategies
+        .iter()
+        .rev()
+        .find(|s| s.weight > 0.0)
+        .expect("positive roulette weight disappeared")
+        .cmp
+}
+
+
+/// Uniformly draw one comparator from the subset encoded by `mask`.
+fn random_strategy_from_mask(
+    mask: usize,
+) -> StrategyFn {
+    assert!(
+        mask != 0
+    );
+
+    let valid_bits =
+        if RANDOM_COMBINATION_POOL.len()
+            >= usize::BITS as usize
+        {
+            usize::MAX
+        } else {
+            (1usize << RANDOM_COMBINATION_POOL.len()) - 1
+        };
+
+    assert!(
+        mask & !valid_bits == 0,
+        "mixed-strategy mask contains bits outside RANDOM_COMBINATION_POOL"
+    );
+
+    let enabled_count =
+        mask.count_ones() as usize;
+
+    let chosen =
+        rand::random_range(
+            0..enabled_count
+        );
+
+    let mut seen =
+        0usize;
+
+    for (index, strategy) in
+        RANDOM_COMBINATION_POOL
+            .iter()
+            .enumerate()
+    {
+        if mask
+            & (1usize << index)
+            == 0
+        {
+            continue;
+        }
+
+        if seen == chosen {
+            return strategy.cmp;
+        }
+
+        seen += 1;
+    }
+
+    unreachable!()
+}
+
+
+/// Sequential tournament in which a NEW criterion is sampled for every
+/// candidate-vs-current-best comparison.
+fn best_mixed(
+    candidates: &[Candidate],
+    mask: usize,
+) -> usize {
+    assert!(
+        !candidates.is_empty()
+    );
+
+    assert!(
+        mask != 0
+    );
+
+    let mut best =
+        0usize;
+
+    for i in 1..candidates.len() {
+        let cmp =
+            random_strategy_from_mask(
+                mask
+            );
+
+        if cmp(
+            &candidates[i],
+            &candidates[best],
+        ) == Ordering::Less
+        {
+            best = i;
+        }
+    }
+
+    best
 }
 
 
@@ -959,7 +1235,11 @@ impl Selector {
 
 
             // -----------------------------------------------------------------
-            // Truly random feasible insertion
+            // TRUE RANDOM feasible insertion
+            //
+            // Every feasible (vertex, position) pair has exactly the same
+            // probability of being selected in this construction step.
+            // No score/cost criterion participates in the choice.
             // -----------------------------------------------------------------
 
             Selector::Random => {
@@ -1044,6 +1324,60 @@ impl Selector {
                     candidates,
                     primary,
                     tie_breaker,
+                )
+            }
+
+
+            // -----------------------------------------------------------------
+            // Weighted random criterion per construction step
+            // -----------------------------------------------------------------
+
+            Selector::WeightedRandomCriterion(
+                strategies
+            ) => {
+                let cmp =
+                    weighted_random_strategy(
+                        strategies
+                    );
+
+                best_all(
+                    candidates,
+                    cmp,
+                    false,
+                )
+            }
+
+
+            // -----------------------------------------------------------------
+            // Weighted random criterion + random exact tie breaking
+            // -----------------------------------------------------------------
+
+            Selector::WeightedRandomCriterionRandomTie(
+                strategies
+            ) => {
+                let cmp =
+                    weighted_random_strategy(
+                        strategies
+                    );
+
+                best_all(
+                    candidates,
+                    cmp,
+                    true,
+                )
+            }
+
+
+            // -----------------------------------------------------------------
+            // New criterion for EVERY pairwise comparison
+            // -----------------------------------------------------------------
+
+            Selector::MixedCriterionMask(
+                mask
+            ) => {
+                best_mixed(
+                    candidates,
+                    mask,
                 )
             }
 
