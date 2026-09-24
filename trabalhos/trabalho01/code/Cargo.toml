@@ -1,0 +1,10 @@
+[package]
+name = "SilviaOP"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crossbeam-channel = "0.5.17"
+macroquad = "0.4.16"
+rand = "0.10.2"
+
