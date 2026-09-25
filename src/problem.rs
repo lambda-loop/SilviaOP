@@ -11,6 +11,8 @@ use matrix::SquareMatrix;
 use pos::Node as Pos2D;
 use route::*;
 
+pub static mut EVALS: usize = 0;
+
 #[derive(Debug)]
 pub struct Problem {
     pub tmax: f32,
@@ -67,10 +69,12 @@ impl Problem {
 
         total_consume += self.costs[(r[r_len - 1] as usize, 1)];
 
+        unsafe {  EVALS += 1; };
         RouteStatus {
             total_score,
             total_consume,
         }
+
     }
 }
 
