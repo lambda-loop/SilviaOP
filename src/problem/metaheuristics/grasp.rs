@@ -2,6 +2,10 @@
 use fixedbitset::FixedBitSet as Set;
 
 mod strategy;
+mod path_relinking;
+
+use path_relinking::path_relink_all;
+
 use strategy::*;
 use crate::problem::Problem;
 
@@ -20,33 +24,39 @@ use rand::*;
 use rand::rngs::ThreadRng;
 
 
-pub fn grasp_classical(p: &Problem, alpha: f32, rng: &mut ThreadRng, mut builder: Builder) -> Vec<u8> {
+pub fn grasp_classical(
+    p: &Problem,
+    num_builds: usize,
+    alpha: f32,
+    rng: &mut ThreadRng,
+    is_relink_classical: bool,
+    mut builder: Builder,
+) -> Vec<u8> {
     let mut tours = Vec::new();
     
-    loop {
+    for i in 0..num_builds {
         // let tour = build_classical_03(p, alpha, rng);
-        let tour = builder(p, alpha, rng, marginal_smart);
+        let tour = builder(p, alpha, rng);
         let mut visited = Set::with_capacity(p.len);
         visited.insert(0); visited.insert(1);
         for &v in tour.iter() { visited.insert(v as usize); }
         let tour = local_search(p, tour, &mut visited);
-        let status = p.eval_route(&tour);
+        // let status = p.eval_route(&tour);
 
-        if status.total_score > 1100 {
-            println!("---------------------------");
-            println!("tour   : {:?}", &tour);
-            println!("score  : {}", status.total_score);
-            println!("consume: {}", status.total_consume);
-            println!("---------------------------");
-        }
+        // if status.total_score > 1100 {
+        //     println!("---------------------------");
+        //     println!("tour   : {:?}", &tour);
+        //     println!("score  : {}", status.total_score);
+        //     println!("consume: {}", status.total_consume);
+        //     println!("---------------------------");
+        // }
 
-        assert_no_duplicates(p, &tour);
+        // assert_no_duplicates(p, &tour);
+        println!("{:?}", i);
         tours.push(tour);
     }
 
-
-
-    todo!()
+    path_relink_all(p, tours, is_relink_classical, rng)
 }
 
 // pub fn grasp_megazord(p: &Problem, alpha: f32, rng: &mut ThreadRng) -> Vec<u8> {

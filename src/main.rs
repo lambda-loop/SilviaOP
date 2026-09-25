@@ -13,6 +13,7 @@ mod rendering;
 
 use problem::heuristic;
 use problem::heuristic::strategy::{
+    marginal_lazy,
     marginal_envy,
     marginal_smart,
     total_envy,
@@ -26,11 +27,17 @@ use problem::metaheuristics::grasp;
 
 const FILE_NAME: &'static str = "set_64_1_65.txt";
 pub fn main() {
+    // let builder = grasp::build::build_classical;
+    let builder = grasp::build::build_rand;
     let input = fs::read_to_string(format!("data/{}", FILE_NAME)).unwrap();
     let p = Problem::new(&input);
     let mut rng = rand::rng();
-    grasp::grasp_classical(&p, 0.2, &mut rng);
-    println!("{}", &input);
+    let best_tour = grasp::grasp_classical(&p, 500, 0.2, &mut rng, false, builder);
+    let status = p.eval_route(&best_tour);
+    println!("tour: {:?}", &best_tour);
+    println!("score: {}", status.total_score);
+    println!("consume: {}", status.total_consume);
+    // println!("{}", &input);
 }
 
 

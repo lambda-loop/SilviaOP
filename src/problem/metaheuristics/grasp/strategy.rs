@@ -13,6 +13,54 @@ pub struct Candidate {
 }
 
 
+use crate::problem::Problem;
+
+impl Candidate {
+
+    pub fn new(
+        p: &Problem,
+        tour: &[u8],
+        u: usize,
+        k: usize
+    )-> Self {
+        let prev =
+            if k == 0 {
+                0
+            } else {
+                tour[k - 1] as usize
+            };
+
+        let next =
+            if k == tour.len() {
+                1
+            } else {
+                tour[k] as usize
+            };
+
+        let cost_increase =
+              p.costs[(prev, u)] as f32
+            + p.costs[(u, next)] as f32
+            - p.costs[(prev, next)] as f32;
+
+        let mut new_tour = tour.to_vec();
+        new_tour.insert(k, u as u8);
+
+        let status = p.eval_route(&new_tour);
+
+        Candidate {
+            u: u as u8,
+            k,
+            status,
+            score_gain: p.scores[u] as f32,
+            cost_increase,
+        }
+    }
+}
+
+            // let status = p.eval_route(&new_tour);
+
+
+
 // type Picker = Box<dyn FnMut(Vec<Candidate>, &mut ThreadRng) -> Candidate>;
 pub type Conversor = fn(&Candidate) -> f32;
 
