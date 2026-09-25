@@ -180,3 +180,16 @@ pub fn two_opt(
 
     neighborhood
 }
+
+fn assert_no_duplicates(p: &Problem, tour: &[u8]) {
+    let mut seen = Set::with_capacity(p.len);
+
+    for &u in tour {
+        assert!(
+            !seen.contains(u as usize),
+            "duplicate vertex {u}: {tour:?}"
+        );
+
+        seen.insert(u as usize);
+    }
+}
