@@ -1,6 +1,7 @@
 
 use fixedbitset::FixedBitSet as Set;
 
+// mod experiemnt;
 mod strategy;
 mod path_relinking;
 
@@ -8,7 +9,6 @@ use path_relinking::path_relink_all;
 
 use strategy::*;
 use crate::problem::Problem;
-
 
 pub mod build;
 pub mod local_search;
@@ -22,7 +22,6 @@ use build::*;
 use local_search::local_search;
 use rand::*;
 use rand::rngs::ThreadRng;
-
 
 pub fn grasp_classical(
     p: &Problem,
@@ -125,3 +124,6 @@ fn assert_no_duplicates(p: &Problem, tour: &[u8]) {
         seen.insert(u as usize);
     }
 }
+
+use super::Method;
+use super::experiment::Result as ER;
