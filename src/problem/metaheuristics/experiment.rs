@@ -2,26 +2,97 @@
 
 use crate::problem::Problem;
 
-#[derive(Debug)]
+// Represents a bunch of experiments for a single prblem using a single method!
+#[derive(Debug, Clone)]
 pub struct Result {
+    pub tour: Vec<u8>,
+    pub time: std::time::Duration,
+}
+
+#[derive(Debug)]
+pub struct Conclusion {
     pub problem_name: String,
     pub method_name : String,
 
     pub worst_score : f32,
     pub best_score  : f32,
 
-    pub mean        : f32,
-    pub median      : f32,
-    pub variance    : f32,
+    pub mean_score  : f32,
+    pub median_score      : f32,
+    pub score_variance    : f32,
     pub standard_deviation : f32,
 
     pub worst_tour: Vec<u8>,
     pub best_tour : Vec<u8>,
 
-    pub mean_time: std::time::Duration,
+    // in millis 
+    pub mean_time: f32,
 }
 
-impl Result {
+impl Conclusion {
+    pub fn new(
+        rs: Vec<Result>,
+        p: &Problem,
+        problem_name: String,
+        method_name: String
+    ) -> Self {
+        let mut rs: Vec<_> = rs.into_iter().map(|r| {
+            let r_score = p.eval_route(&r.tour).total_score;
+            (r, r_score as f32)
+        }).collect();
+
+        rs.sort_unstable_by(|(_, l), (_, r)| l.total_cmp(r));
+        let (worst_r, worst_score) = rs[0].clone();
+        let (best_r, best_score)  = rs.last().expect("result values cant be empty");
+
+        let (total_score, total_time) = rs.iter().fold(
+            (0., 0.),
+            |(acc_score, acc_time), (r, score)|
+            (acc_score as f32 + score, r.time.as_millis() as f32 + acc_time)
+        );
+
+        let (mean_score, mean_time) = (
+            total_score / rs.len() as f32,
+            total_time  / rs.len() as f32,
+        );
+
+        let median_score = if rs.len() % 2 == 0 {
+            let middle = rs.len() / 2;
+            (rs[middle - 1].1 + rs[middle].1) / 2.0
+        } else {
+            rs[rs.len() / 2].1
+        };
+        
+        let score_variance = rs.iter()
+            .map(|(_, score)| {
+                let diff = score - mean_score;
+                diff * diff
+            })
+            .sum::<f32>()
+            / rs.len() as f32;
+        
+        let standard_deviation = score_variance.sqrt();
+        let (best_tour, worst_tour) = (best_r.tour.clone(), worst_r.tour);
+        
+        Self {
+            problem_name,
+            method_name,
+            
+            worst_score,
+            best_score: *best_score,
+            
+            mean_score,
+            median_score,
+            score_variance,
+            standard_deviation,
+            
+            worst_tour,
+            best_tour,
+            
+            mean_time,
+        }
+    }
+
     pub fn header() -> String {
         format!(
             "{},{},{},{},{},{},{},{},{},{},{}",
@@ -29,9 +100,9 @@ impl Result {
             "method_name",
             "best_score",
             "worst_score",
-            "mean",
-            "median",
-            "variance",
+            "mean_score",
+            "median_score",
+            "score_variance",
             "standard_deviation",
 
             "worst_tour",
@@ -48,15 +119,15 @@ impl Result {
             self.method_name,
             self.best_score,
             self.worst_score,
-            self.mean,
-            self.median,
-            self.variance,
+            self.mean_score,
+            self.median_score,
+            self.score_variance,
             self.standard_deviation,
 
             self.worst_tour,
             self.best_tour,
 
-            self.mean_time.as_nanos(),
+            self.mean_time,
         )
     }
 }

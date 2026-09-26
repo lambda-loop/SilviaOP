@@ -32,7 +32,7 @@ pub fn main() {
     let input = fs::read_to_string(format!("data/{}", FILE_NAME)).unwrap();
     let p = Problem::new(&input);
     let mut rng = rand::rng();
-    let best_tour = grasp::grasp_classical(&p, 20, 0.2, &mut rng, true, builder);
+    let best_tour = grasp::grasp_classical(&p, 20, 0.2, &mut rng, false, builder);
     let status = p.eval_route(&best_tour);
     println!("tour: {:?}", &best_tour);
     println!("score: {}", status.total_score);
