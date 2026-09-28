@@ -95,7 +95,7 @@ impl Conclusion {
 
     pub fn header() -> String {
         format!(
-            "{},{},{},{},{},{},{},{},{},{},{}",
+            "{},{},{},{},{},{},{},{},{},{},{}\n",
             "problem_name",
             "method_name",
             "best_score",
@@ -114,7 +114,7 @@ impl Conclusion {
 
     pub fn to_csv(&self) -> String {
         format!(
-            "{},{},{},{},{},{},{},{},{:?},{:?},{:?}",
+            "{},{},{},{},{},{},{},{},{:?},{:?},{:?}\n",
             self.problem_name,
             self.method_name,
             self.best_score,

@@ -23,6 +23,117 @@ use local_search::local_search;
 use rand::*;
 use rand::rngs::ThreadRng;
 
+#[derive(Clone, Debug)]
+pub enum Relink{
+    Classical,
+    Weird, 
+    None,
+}
+
+#[derive(Clone)]
+pub struct Grasp {
+    pub num_builds: usize,
+    pub alpha: f32,
+    pub rng: ThreadRng,
+    pub relink: Relink,
+    pub builder: Builder,
+}
+
+use super::Method;
+impl Method for Grasp {
+    fn shot(&mut self, p: &Problem) -> ER {
+        let start = std::time::Instant::now();
+        let mut tours = Vec::new();
+        
+        for i in 0..self.num_builds {
+            // let tour = build_classical_03(p, alpha, rng);
+            let tour = (self.builder)(p, self.alpha, &mut self.rng);
+            let mut visited = Set::with_capacity(p.len);
+            visited.insert(0); visited.insert(1);
+            for &v in tour.iter() { visited.insert(v as usize); }
+            let tour = local_search(p, tour, &mut visited);
+            // println!("{:?}", i);
+            tours.push(tour);
+        }
+
+        let tour = match self.relink {
+            Relink::Classical => {
+                path_relink_all(
+                    p,
+                    tours,
+                    true,
+                    &mut self.rng,
+                )
+            }
+            
+            Relink::Weird => {
+                path_relink_all(
+                    p,
+                    tours,
+                    false,
+                    &mut self.rng,
+                )
+            }
+            
+            Relink::None => {
+                let best = tours
+                    .into_iter()
+                    .max_by(|l, r| {
+                        let l = p.eval_route(l).total_score;
+                        let r = p.eval_route(r).total_score;
+                        l.cmp(&r)
+                    }).unwrap();
+                best
+            },
+        };
+
+        ER {
+            tour,
+            time: start.elapsed(),
+        }
+    }
+
+    fn all_ms() -> Vec<(Self, String)> {
+        let mut ms = Vec::new();
+        for x in 1..10 {
+            for r in RELINKERS {
+                let rng = rand::rng();
+                let alpha = x as f32 / 10.;
+                let name = format!("grasp-classical-{:?}-{:?}", alpha, r);
+                ms.push( (Grasp {
+                    num_builds: 100,
+                    alpha,
+                    rng,
+                    relink: r.clone(),
+                    builder: build_classical,
+                }, name));
+
+                let rng = rand::rng();
+                let alpha = x as f32 / 10.;
+                let name = format!("grasp-rand-{:?}-{:?}", alpha, r);
+                ms.push( (Grasp {
+                    num_builds: 100,
+                    alpha,
+                    rng,
+                    relink: r,
+                    builder: build_rand,
+                }, name));
+            }
+        }
+
+
+        ms
+    }
+    
+}
+// TODO: for nos builders..?
+
+const RELINKERS: [Relink;3] = [
+    Relink::Classical,
+    Relink::Weird,
+    Relink::None,
+];
+
 pub fn grasp_classical(
     p: &Problem,
     num_builds: usize,
@@ -125,5 +236,4 @@ fn assert_no_duplicates(p: &Problem, tour: &[u8]) {
     }
 }
 
-use super::Method;
 use super::experiment::Result as ER;
