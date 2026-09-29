@@ -23,6 +23,8 @@ use local_search::local_search;
 use rand::*;
 use rand::rngs::ThreadRng;
 
+const NUM_BUILDS: usize = 500;
+
 #[derive(Clone, Debug)]
 pub enum Relink{
     Classical,
@@ -101,7 +103,7 @@ impl Method for Grasp {
                 let alpha = x as f32 / 10.;
                 let name = format!("grasp-classical-{:?}-{:?}", alpha, r);
                 ms.push( (Grasp {
-                    num_builds: 100,
+                    num_builds: NUM_BUILDS,
                     alpha,
                     rng,
                     relink: r.clone(),
@@ -112,7 +114,7 @@ impl Method for Grasp {
                 let alpha = x as f32 / 10.;
                 let name = format!("grasp-rand-{:?}-{:?}", alpha, r);
                 ms.push( (Grasp {
-                    num_builds: 100,
+                    num_builds: NUM_BUILDS,
                     alpha,
                     rng,
                     relink: r,
