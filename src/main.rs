@@ -38,11 +38,11 @@ pub fn main() {
     // let mut rng = rand::rng();
     // let best_tour = grasp::grasp_classical(&p, 20, 0.2, &mut rng, false, builder);
     let mut ps = all_problems();
-    let mut oplib_ps = oplib_problems();
-    ps.append(&mut oplib_ps);
+    // let mut oplib_ps = oplib_problems();
+    // ps.append(&mut oplib_ps);
     // let ps = ps.into_iter().filter(|(p, _)| p.len < 100).collect();
 
-    let cs = grasp::Grasp::run_all_ms_in_all_ps(ps, 1);
+    let cs = grasp::Grasp::run_all_ms_in_all_ps(ps, 100);
 
     let mut contents = String::new();
     contents.push_str(&Conclusion::header());
