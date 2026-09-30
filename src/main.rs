@@ -42,16 +42,20 @@ pub fn main() {
     // ps.append(&mut oplib_ps);
     // let ps = ps.into_iter().filter(|(p, _)| p.len < 100).collect();
 
-    let cs = grasp::Grasp::run_all_ms_in_all_ps(ps, 100);
+    // let cs =
+    let header = &Conclusion::header();
+    print!("{header}");
+    grasp::Grasp::run_all_ms_in_all_ps(ps, 100);
+    println!("acabou!")
 
-    let mut contents = String::new();
-    contents.push_str(&Conclusion::header());
+    // let mut contents = String::new();
+    // contents.push_str(&Conclusion::header());
 
-    for c in cs.into_iter() {
-        contents.push_str(&c.to_csv());
-    }
+    // for c in cs.into_iter() {
+    //     contents.push_str(&c.to_csv());
+    // }
 
-    fs::write("grasps3.csv", &contents);
+    // fs::write("grasps3.csv", &contents);
     // let ms = grasp::Grasp::all_ms();
     // for m in ms.iter() {
     //     println!("{:?}", m.0.alpha);

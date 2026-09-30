@@ -114,7 +114,7 @@ impl Conclusion {
 
     pub fn to_csv(&self) -> String {
         format!(
-            "{},{},{},{},{},{},{},{},{:?},{:?},{:?}\n",
+            "{},{},{:.1},{:.1},{:.2},{:.2},{:.4},{:.4},{:?},{:?},{:.2}\n",
             self.problem_name,
             self.method_name,
             self.best_score,

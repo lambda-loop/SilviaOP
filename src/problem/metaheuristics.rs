@@ -39,39 +39,42 @@ pub trait Method where Self:Sized {
         p: &Problem,
         problem_name: &str,
         num_shots_per_method: usize,
-    ) -> Vec<Conclusion> {
+    ) { // -> Vec<Conclusion> {
         let ms = Self::all_ms();
-        let mut ers = Vec::new();
+        // let mut ers = Vec::new();
         for (mut m, m_name) in ms.into_iter() {
-            ers.push( m.run(
+            let c = m.run(
                 p,
                 num_shots_per_method,
                 problem_name,
                 &m_name,
-            ));
-        }
+            ).to_csv();
 
-        ers
+            print!("{c}");
+        }
     }
 
     fn run_all_ms_in_all_ps(
         ps: Vec<(Problem, String)>,
         num_shots_per_method: usize,
-    ) -> Vec<Conclusion> {
+    ) { // -> Vec<Conclusion> {
         assert_ne!(num_shots_per_method, 0);
+        let ps_len = ps.len();
         
         ps.into_par_iter()
-            .map(|(p, p_name)| {
-                println!("done with {:?}", &p_name);
+            .for_each(|(p, p_name)| {
+               // println!("done with {:?}", &p_name);
                 Self::run_all_ms_in_p(
                     &p,
                     &p_name,
                     num_shots_per_method,
-                )
-            })
-            .collect::<Vec<Vec<Conclusion>>>()
-            .into_iter()
-            .flatten()
-            .collect()
+                );
+                // println!("--- DONE WITH THE {i} PROBLEM of {ps_len}!!");
+
+            });
+            // .collect::<Vec<Vec<Conclusion>>>()
+            // .into_iter()
+            // .flatten()
+            // .collect()
     }
 }
