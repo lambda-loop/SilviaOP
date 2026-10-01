@@ -23,7 +23,7 @@ use local_search::local_search;
 use rand::*;
 use rand::rngs::ThreadRng;
 
-const NUM_BUILDS: usize = 500;
+const NUM_BUILDS: usize = 20;
 
 #[derive(Clone, Debug)]
 pub enum Relink{

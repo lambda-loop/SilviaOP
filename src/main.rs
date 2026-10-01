@@ -37,7 +37,8 @@ pub fn main() {
     // let p = Problem::new(&input);
     // let mut rng = rand::rng();
     // let best_tour = grasp::grasp_classical(&p, 20, 0.2, &mut rng, false, builder);
-    let mut ps = all_problems();
+    // let mut ps = all_problems();
+    let mut ps = oplib_problems();
     // let mut oplib_ps = oplib_problems();
     // ps.append(&mut oplib_ps);
     // let ps = ps.into_iter().filter(|(p, _)| p.len < 100).collect();
@@ -45,7 +46,7 @@ pub fn main() {
     // let cs =
     let header = &Conclusion::header();
     print!("{header}");
-    grasp::Grasp::run_all_ms_in_all_ps(ps, 100);
+    grasp::Grasp::run_all_ms_in_all_ps(ps, 10);
     println!("acabou!")
 
     // let mut contents = String::new();
