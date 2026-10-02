@@ -41,13 +41,15 @@ pub struct Grasp {
     pub builder: Builder,
 }
 
+use crate::consume_credit;
 use super::Method;
 impl Method for Grasp {
-    fn shot(&mut self, p: &Problem) -> ER {
+    fn shot(&mut self, p: &Problem, budget: usize) -> ER {
+        let mut used_credits = 0;
         let start = std::time::Instant::now();
         let mut tours = Vec::new();
         
-        for i in 0..self.num_builds {
+        for _ in 0..self.num_builds {
             // let tour = build_classical_03(p, alpha, rng);
             let tour = (self.builder)(p, self.alpha, &mut self.rng);
             let mut visited = Set::with_capacity(p.len);

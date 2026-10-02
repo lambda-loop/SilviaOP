@@ -9,20 +9,27 @@ use experiment::Conclusion;
 use crate::problem::Problem;
 // pub mod simulated_annealing;
 
+const CREDITS: [usize;3] = [
+    100_000   ,
+    1_000_000 ,
+    10_000_000,
+];
+
 use rayon::prelude::*;
 pub trait Method where Self:Sized {
     // type Args;
-    fn shot(&mut self, p: &Problem) -> ER;
+    fn shot(&mut self, p: &Problem, credits: usize) -> ER;
     fn run (
         &mut self,
         p: &Problem,
+        credits: usize,
         num_shots: usize,
         problem_name: &str,
         method_name : &str,
     ) -> Conclusion {
         let mut shots = Vec::with_capacity(num_shots);
         for _ in 0..num_shots {
-            let shot = self.shot(p);
+            let shot = self.shot(p, credits);
             shots.push(shot);
         }
 
@@ -43,14 +50,16 @@ pub trait Method where Self:Sized {
         let ms = Self::all_ms();
         // let mut ers = Vec::new();
         for (mut m, m_name) in ms.into_iter() {
-            let c = m.run(
-                p,
-                num_shots_per_method,
-                problem_name,
-                &m_name,
-            ).to_csv();
-
-            print!("{c}");
+            for credits in CREDITS {
+                let c = m.run(
+                    p,
+                    credits,
+                    num_shots_per_method,
+                    problem_name,
+                    &m_name,
+                ).to_csv();
+                print!("{c}");
+            }
         }
     }
 
@@ -78,3 +87,20 @@ pub trait Method where Self:Sized {
             // .collect()
     }
 }
+
+
+////////////////// credits system:
+pub struct OutOfCredits;
+
+#[macro_export]
+macro_rules! consume_credit {
+    ($counter:expr, $limit:expr) => {
+        if *$counter == $limit {
+            return Err(OutOfCredits);
+        } else {
+            *$counter += 1;
+        }
+    };
+}
+
+

@@ -5,6 +5,9 @@ use fixedbitset::FixedBitSet as Set;
 
 use std::cmp::Ordering;
 
+use crate::consume_credit;
+use super::super::OutOfCredits;
+
 // neighboorhood generators
 
 // implements the article 2014 version
@@ -157,8 +160,10 @@ pub fn insertion(p: &Problem, tour: &[u8], visited: &Set) -> Vec<(u8, Vec<u8>)> 
 
 pub fn two_opt(
     p: &Problem,
+    used: &mut usize,
+    budget: usize,
     tour: &[u8],
-) -> Vec<Vec<u8>> {
+) -> Result<Vec<Vec<u8>>, OutOfCredits> {
     let tour_len = tour.len();
     let mut neighborhood = Vec::new();
 
@@ -169,7 +174,7 @@ pub fn two_opt(
             new_tour[i..=j].reverse();
 
             let status = p.eval_route(&new_tour);
-
+            consume_credit!(used, budget);
             if status.total_consume > p.tmax {
                 continue;
             }
@@ -178,18 +183,18 @@ pub fn two_opt(
         }
     }
 
-    neighborhood
+    Ok(neighborhood)
 }
 
-fn assert_no_duplicates(p: &Problem, tour: &[u8]) {
-    let mut seen = Set::with_capacity(p.len);
+// fn assert_no_duplicates(p: &Problem, tour: &[u8]) {
+//     let mut seen = Set::with_capacity(p.len);
 
-    for &u in tour {
-        assert!(
-            !seen.contains(u as usize),
-            "duplicate vertex {u}: {tour:?}"
-        );
+//     for &u in tour {
+//         assert!(
+//             !seen.contains(u as usize),
+//             "duplicate vertex {u}: {tour:?}"
+//         );
 
-        seen.insert(u as usize);
-    }
-}
+//         seen.insert(u as usize);
+//     }
+// }
