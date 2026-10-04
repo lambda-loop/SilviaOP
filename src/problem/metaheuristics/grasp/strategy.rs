@@ -1,4 +1,5 @@
 use crate::problem::RouteStatus;
+use crate::problem::metaheuristics::OutOfCredits;
 use std::cmp::Ordering;
 
 #[derive(Clone)]
@@ -14,15 +15,19 @@ pub struct Candidate {
 
 
 use crate::problem::Problem;
+use crate::consume_credit;
 
 impl Candidate {
 
     pub fn new(
         p: &Problem,
         tour: &[u8],
+        used: &mut usize,
+        budget: usize,
         u: usize,
         k: usize
-    )-> Self {
+    )-> Result<Self, OutOfCredits> {
+        consume_credit!(used, budget);
         let prev =
             if k == 0 {
                 0
@@ -47,13 +52,13 @@ impl Candidate {
 
         let status = p.eval_route(&new_tour);
 
-        Candidate {
+        Ok(Candidate {
             u: u as u8,
             k,
             status,
             score_gain: p.scores[u] as f32,
             cost_increase,
-        }
+        })
     }
 }
 

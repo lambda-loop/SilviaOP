@@ -3,16 +3,20 @@ use std::collections::HashSet;
 
 use super::{Conversor, Candidate};
 use fixedbitset::FixedBitSet as Set;
-use crate::problem::Problem;
+use crate::problem::{Problem, metaheuristics::OutOfCredits};
 
+use crate::consume_credit;
 pub fn path_relinking(
-    p   : &Problem,
+    p     : &Problem,
+    used  : &mut usize,
+    budget: usize,
     from: &[u8],
     to  : &[u8],
     conversor: Conversor,
-) -> Vec<u8> {
+) -> Result<Vec<u8>, OutOfCredits> {
     let mut current_tour = from.to_vec();
     let mut best_tour    = from.to_vec();
+    consume_credit!(used, budget);
     let mut best_score   = p.eval_route(&from).total_score;
 
 
@@ -54,24 +58,34 @@ pub fn path_relinking(
 
     for u in to_add {
         let k = (0..=current_tour.len())
-                .map(|k| Candidate::new(p, &current_tour, u as usize, k))
+                .map(|k| Candidate::new(p, &current_tour, used, budget, u as usize, k))
+                .collect::<Result<Vec<_>, OutOfCredits>>()?
+                .into_iter()
                 .max_by(|l, r| conversor(l).total_cmp(&conversor(r)))
                 .unwrap()
                 .k;
 
+        let previous_tour = current_tour.clone();
+        let previous_to_remove = to_remove.clone();
         current_tour.insert(k, u);
-        while p.eval_route(&current_tour).total_consume > p.tmax {
+        while {
+            consume_credit!(used, budget);
+            p.eval_route(&current_tour).total_consume > p.tmax
+        } {
+
             if let Some(v)   = to_remove.pop() && 
                let Some(pos) = current_tour.iter().position(|&x| x == v) {
                     current_tour.remove(pos);
                 
             } else {
-                if let Some(pos) = current_tour.iter().position(|&x| x == u) {
-                    current_tour.remove(pos);
-                }
-                break;
+                   current_tour = previous_tour;
+                   to_remove = previous_to_remove;
+                   break;
             }
+            
         }
+
+        consume_credit!(used, budget);
         let current_score = p.eval_route(&current_tour).total_score;
         if current_score > best_score {
             best_score = current_score;
@@ -79,82 +93,7 @@ pub fn path_relinking(
         }
     }
 
-    best_tour
-}
-
-pub fn path_relink_all(
-    p: &Problem,
-    tours: Vec<Vec<u8>>,
-    is_classical: bool,
-    rng: &mut ThreadRng,
-    // conversor: Conversor,
-) -> Vec<u8> {
-    assert!(!tours.is_empty());
-
-    // Remove tours exactly equal to each other.
-    let tours: Vec<Vec<u8>> = tours
-        .into_iter()
-        .collect::<HashSet<_>>()
-        .into_iter()
-        .collect();
-
-    // The best solution may already be one of the original tours.
-    let mut best_tour = tours[0].clone();
-    let mut best_score = p.eval_route(&best_tour).total_score;
-
-    for tour in &tours {
-        let score = p.eval_route(tour).total_score;
-
-        if score > best_score {
-            best_score = score;
-            best_tour = tour.clone();
-        }
-    }
-
-    // Every distinct unordered pair exactly once.
-    for i in 0..tours.len() {
-        for j in (i + 1)..tours.len() {
-            // i -> j
-            let conversor = if is_classical { marginal_lazy }
-                else { random_conversor(rng) };
-            let relinked =
-                path_relinking(
-                    p,
-                    &tours[i],
-                    &tours[j],
-                    conversor,
-                );
-
-            let score =
-                p.eval_route(&relinked).total_score;
-
-            if score > best_score {
-                best_score = score;
-                best_tour = relinked;
-            }
-
-            // j -> i
-            let conversor = if is_classical { marginal_lazy }
-                else { random_conversor(rng) };
-            let relinked =
-                path_relinking(
-                    p,
-                    &tours[j],
-                    &tours[i],
-                    conversor,
-                );
-
-            let score =
-                p.eval_route(&relinked).total_score;
-
-            if score > best_score {
-                best_score = score;
-                best_tour = relinked;
-            }
-        }
-    }
-
-    best_tour
+    Ok(best_tour)
 }
 
 use rand::*;

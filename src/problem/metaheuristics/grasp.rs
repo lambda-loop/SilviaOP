@@ -5,7 +5,7 @@ use fixedbitset::FixedBitSet as Set;
 mod strategy;
 mod path_relinking;
 
-use path_relinking::path_relink_all;
+// use path_relinking::path_relink_all;
 
 use strategy::*;
 use crate::problem::Problem;
@@ -45,30 +45,32 @@ use crate::consume_credit;
 use super::Method;
 impl Method for Grasp {
     fn shot(&mut self, p: &Problem, budget: usize) -> ER {
-        let mut used_credits = 0;
+        let mut used = 0;
         let start = std::time::Instant::now();
         let mut tours = Vec::new();
         
         for _ in 0..self.num_builds {
             // let tour = build_classical_03(p, alpha, rng);
-            let tour = (self.builder)(p, self.alpha, &mut self.rng);
+            let Ok(tour) = (self.builder)(p, &mut used, budget, self.alpha, &mut self.rng) else {
+                break };
+                
             let mut visited = Set::with_capacity(p.len);
             visited.insert(0); visited.insert(1);
             for &v in tour.iter() { visited.insert(v as usize); }
-            let tour = local_search(p, tour, &mut visited);
-            // println!("{:?}", i);
-            tours.push(tour);
+            if let tour = local_search(p, &mut used, budget, tour, &mut visited) {
+                tours.push(tour);
+            } else { break; };
         }
 
         let tour = match self.relink {
-            Relink::Classical => {
-                path_relink_all(
-                    p,
-                    tours,
-                    true,
-                    &mut self.rng,
-                )
-            }
+            // Relink::Classical => {
+            //     path_relink_all(
+            //         p,
+            //         tours,
+            //         true,
+            //         &mut self.rng,
+            //     )
+            // }
             
             Relink::Weird => {
                 path_relink_all(
@@ -140,6 +142,8 @@ const RELINKERS: [Relink;3] = [
 
 pub fn grasp_classical(
     p: &Problem,
+    used: &mut usize,
+    budget: usize,
     num_builds: usize,
     alpha: f32,
     rng: &mut ThreadRng,
@@ -150,81 +154,19 @@ pub fn grasp_classical(
     
     for i in 0..num_builds {
         // let tour = build_classical_03(p, alpha, rng);
-        let tour = builder(p, alpha, rng);
+        let Ok(tour) = builder(p, used, budget, alpha, rng) else { break };
         let mut visited = Set::with_capacity(p.len);
         visited.insert(0); visited.insert(1);
         for &v in tour.iter() { visited.insert(v as usize); }
-        let tour = local_search(p, tour, &mut visited);
-        // let status = p.eval_route(&tour);
+        if let tour = local_search(p, used, budget, tour, &mut visited) {
+            println!("{:?}", i);
+            tours.push(tour);
+        } else { break }
 
-        // if status.total_score > 1100 {
-        //     println!("---------------------------");
-        //     println!("tour   : {:?}", &tour);
-        //     println!("score  : {}", status.total_score);
-        //     println!("consume: {}", status.total_consume);
-        //     println!("---------------------------");
-        // }
-
-        // assert_no_duplicates(p, &tour);
-        println!("{:?}", i);
-        tours.push(tour);
     }
 
-    path_relink_all(p, tours, is_relink_classical, rng)
+    // path_relink_all(p, tours, is_relink_classical, rng)
 }
-
-// pub fn grasp_megazord(p: &Problem, alpha: f32, rng: &mut ThreadRng) -> Vec<u8> {
-//     let mut tours = Vec::new();
-    
-//     loop {
-//         // let tour = build_classical_03(p, alpha, rng);
-//         let tour = build02RI(p, alpha, rng, marginal_smart);
-//         let mut visited = Set::with_capacity(p.len);
-//         visited.insert(0); visited.insert(1);
-//         for &v in tour.iter() { visited.insert(v as usize); }
-//         let tour = local_search(p, tour, &mut visited);
-//         let status = p.eval_route(&tour);
-
-//         if status.total_score > 1100 {
-//             println!("---------------------------");
-//             println!("tour   : {:?}", &tour);
-//             println!("score  : {}", status.total_score);
-//             println!("consume: {}", status.total_consume);
-//             println!("---------------------------");
-//         }
-
-//         assert_no_duplicates(p, &tour);
-//         tours.push(tour);
-//     }
-
-
-
-//     todo!()
-// }
-
-// pub fn build_diverse(p: &Problem, alpha: f32, rng: &mut ThreadRng) -> Vec<u8> {
-//     let mut tour      = Vec::with_capacity(p.len);
-//     let mut visited = Set::with_capacity(p.len);
-//     visited.insert(0); visited.insert(1);
-
-//     loop {
-//         let s = match rng.random_range(0..3) {
-//             0 => marginal_envy,
-//             1 => total_envy,
-//             _ => marginal_wise,
-//         };
-
-//         let candidates = select_candidates(p, &tour, alpha, &visited, s);
-//         if candidates.is_empty() { break; }
-
-//         let idx = rng.random_range(0..candidates.len());
-//         let choosen = &candidates[idx];
-//         tour.insert(choosen.k, choosen.u);
-//         visited.insert(choosen.u as usize);
-//     }
-
-//     tour
-// }
 
 
 fn assert_no_duplicates(p: &Problem, tour: &[u8]) {

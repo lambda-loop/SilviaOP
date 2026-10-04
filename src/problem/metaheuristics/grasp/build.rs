@@ -14,7 +14,7 @@ use fixedbitset::FixedBitSet as Set;
 use rand::*;
 use rand::rngs::ThreadRng;
 
-use crate::problem::Problem;
+use crate::problem::{Problem, metaheuristics::OutOfCredits};
 
 use super::strategy::{
     Candidate,
@@ -26,13 +26,23 @@ use super::strategy::{
     marginal_wise,
 };
 
-pub type Builder = fn(&Problem, f32, &mut ThreadRng) -> Vec<u8>;
+pub type Builder = fn(
+    &Problem,
+    &mut usize,
+    usize,
+    f32,
+    &mut ThreadRng
+) -> Result<Vec<u8>, OutOfCredits>;
+
+use crate::consume_credit;
 
 pub fn build_classical(
     p: &Problem,
+    used: &mut usize,
+    budget: usize,
     alpha: f32,
     rng: &mut ThreadRng,
-) -> Vec<u8> {
+) -> Result<Vec<u8>, OutOfCredits> {
     let mut tour = Vec::with_capacity(p.len);
 
     let mut visited = Set::with_capacity(p.len);
@@ -44,10 +54,12 @@ pub fn build_classical(
             select_candidates(
                 p,
                 &tour,
+                used,
+                budget,
                 alpha,
                 &visited,
                 marginal_smart,
-            );
+            )?;
 
         if candidates.is_empty() {
             break;
@@ -60,14 +72,16 @@ pub fn build_classical(
         visited.insert(chosen.u as usize);
     }
 
-    tour
+    Ok(tour)
 }
 
 pub fn build_rand(
     p: &Problem,
+    used: &mut usize,
+    budget: usize,
     alpha: f32,
     rng: &mut ThreadRng,
-) -> Vec<u8> {
+) -> Result<Vec<u8>, OutOfCredits> {
     let mut tour = Vec::with_capacity(p.len);
 
     let mut visited = Set::with_capacity(p.len);
@@ -80,10 +94,12 @@ pub fn build_rand(
             select_candidates(
                 p,
                 &tour,
+                used,
+                budget,
                 alpha,
                 &visited,
                 conversor,
-            );
+            )?;
 
         if candidates.is_empty() {
             break;
@@ -96,16 +112,18 @@ pub fn build_rand(
         visited.insert(chosen.u as usize);
     }
 
-    tour
+    Ok(tour)
 }
 
 fn select_candidates(
     p: &Problem,
     tour: &[u8],
+    used: &mut usize,
+    budget: usize,
     alpha: f32,
     visited: &Set,
     conversor: Conversor,
-) -> Vec<Candidate> {
+) -> Result<Vec<Candidate>, OutOfCredits> {
     let mut new_tour =
         Vec::with_capacity(tour.len() + 1);
 
@@ -119,6 +137,7 @@ fn select_candidates(
             new_tour.extend_from_slice(tour);
             new_tour.insert(k, u as u8);
 
+            consume_credit!(used, budget);
             let status = p.eval_route(&new_tour);
 
             if status.total_consume > p.tmax {
@@ -180,18 +199,18 @@ fn select_candidates(
                 .total_cmp(&conversor(r))
         })
     else {
-        return Vec::new();
+        return Ok(Vec::new());
     };
 
     let threshold =
         alpha * conversor(best);
 
-    candidates
+    Ok(candidates
         .into_iter()
         .filter(|c| {
             conversor(c) >= threshold
         })
-        .collect()
+        .collect())
 }
 
 

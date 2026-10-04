@@ -1,7 +1,7 @@
 //
 
-pub mod grasp;
-pub mod multistart;
+// pub mod grasp;
+// pub mod multistart;
 pub mod experiment;
 
 use experiment::Result as ER;
@@ -26,6 +26,7 @@ pub trait Method where Self:Sized {
         num_shots: usize,
         problem_name: &str,
         method_name : &str,
+        extra_info: &str,
     ) -> Conclusion {
         let mut shots = Vec::with_capacity(num_shots);
         for _ in 0..num_shots {
@@ -38,6 +39,9 @@ pub trait Method where Self:Sized {
             p,
             String::from(problem_name), 
             String::from(method_name),
+            num_shots,
+            credits,
+            extra_info.to_string(),
         )
     }
 
@@ -57,6 +61,7 @@ pub trait Method where Self:Sized {
                     num_shots_per_method,
                     problem_name,
                     &m_name,
+                    "", // TODO: problem with no extra
                 ).to_csv();
                 print!("{c}");
             }
@@ -72,19 +77,13 @@ pub trait Method where Self:Sized {
         
         ps.into_par_iter()
             .for_each(|(p, p_name)| {
-               // println!("done with {:?}", &p_name);
                 Self::run_all_ms_in_p(
                     &p,
                     &p_name,
                     num_shots_per_method,
                 );
-                // println!("--- DONE WITH THE {i} PROBLEM of {ps_len}!!");
 
             });
-            // .collect::<Vec<Vec<Conclusion>>>()
-            // .into_iter()
-            // .flatten()
-            // .collect()
     }
 }
 

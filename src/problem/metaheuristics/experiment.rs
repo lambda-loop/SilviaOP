@@ -11,8 +11,11 @@ pub struct Result {
 
 #[derive(Debug)]
 pub struct Conclusion {
-    pub problem_name: String,
-    pub method_name : String,
+    pub problem_name   : String,
+    pub problem_size   : usize,
+    pub problem_budget : f32,
+
+    pub method_name    : String,
 
     pub worst_score : f32,
     pub best_score  : f32,
@@ -27,6 +30,11 @@ pub struct Conclusion {
 
     // in millis 
     pub mean_time: f32,
+
+    pub num_shots: usize,
+    pub credits: usize,
+    pub extra_info: String,
+
 }
 
 impl Conclusion {
@@ -34,7 +42,10 @@ impl Conclusion {
         rs: Vec<Result>,
         p: &Problem,
         problem_name: String,
-        method_name: String
+        method_name: String,
+        num_shots: usize,
+        credits: usize,
+        extra_info: String,
     ) -> Self {
         let mut rs: Vec<_> = rs.into_iter().map(|r| {
             let r_score = p.eval_route(&r.tour).total_score;
@@ -48,7 +59,7 @@ impl Conclusion {
         let (total_score, total_time) = rs.iter().fold(
             (0., 0.),
             |(acc_score, acc_time), (r, score)|
-            (acc_score as f32 + score, r.time.as_millis() as f32 + acc_time)
+            (acc_score as f32 + score, r.time.as_secs_f32() * 1000.0 + acc_time)
         );
 
         let (mean_score, mean_time) = (
@@ -73,9 +84,15 @@ impl Conclusion {
         
         let standard_deviation = score_variance.sqrt();
         let (best_tour, worst_tour) = (best_r.tour.clone(), worst_r.tour);
+
+        let problem_size = p.len;
+        let problem_budget = p.tmax;
         
         Self {
             problem_name,
+            problem_size,
+            problem_budget,
+
             method_name,
             
             worst_score,
@@ -90,13 +107,20 @@ impl Conclusion {
             best_tour,
             
             mean_time,
+
+            num_shots,
+            credits,
+            extra_info,
         }
     }
 
     pub fn header() -> String {
         format!(
-            "{},{},{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             "problem_name",
+            "problem_size",
+            "problem_budget",
+
             "method_name",
             "best_score",
             "worst_score",
@@ -109,13 +133,19 @@ impl Conclusion {
             "best_tour",
 
             "mean_time",
+
+            "num_shots",
+            "credits",
+            "extra_info",
         )
     }
 
     pub fn to_csv(&self) -> String {
         format!(
-            "{},{},{:.1},{:.1},{:.2},{:.2},{:.4},{:.4},{:?},{:?},{:.2}\n",
+            "{},{},{:1},{},{:.1},{:.1},{:.2},{:.2},{:.4},{:.4},\"{:?}\",\"{:?}\",{:.2},{},{},{}\n",
             self.problem_name,
+            self.problem_size,
+            self.problem_budget,
             self.method_name,
             self.best_score,
             self.worst_score,
@@ -128,6 +158,10 @@ impl Conclusion {
             self.best_tour,
 
             self.mean_time,
+
+            self.num_shots,
+            self.credits,
+            self.extra_info,
         )
     }
 }

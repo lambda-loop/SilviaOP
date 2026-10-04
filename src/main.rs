@@ -23,7 +23,7 @@ use problem::heuristic::strategy::{
 use problem::heuristic::ExperimentSpec;
 use problem::Problem;
 
-use problem::metaheuristics::grasp;
+// use problem::metaheuristics::grasp;
 use problem::metaheuristics;
 use metaheuristics::*;
 
@@ -31,48 +31,11 @@ use metaheuristics::experiment::Conclusion;
 
 const FILE_NAME: &'static str = "set_64_1_65.txt";
 pub fn main() {
-    // let builder = grasp::build::build_classical;
-    // let builder = grasp::build::build_rand;
-    // let input = fs::read_to_string(format!("data/{}", FILE_NAME)).unwrap();
-    // let p = Problem::new(&input);
-    // let mut rng = rand::rng();
-    // let best_tour = grasp::grasp_classical(&p, 20, 0.2, &mut rng, false, builder);
-    // let mut ps = all_problems();
-    let mut ps = oplib_problems();
-    // let mut oplib_ps = oplib_problems();
-    // ps.append(&mut oplib_ps);
-    // let ps = ps.into_iter().filter(|(p, _)| p.len < 100).collect();
-
-    // let cs =
     let header = &Conclusion::header();
     print!("{header}");
-    grasp::Grasp::run_all_ms_in_all_ps(ps, 10);
+    // grasp::Grasp::run_all_ms_in_all_ps(ps, 10);
     println!("acabou!")
 
-    // let mut contents = String::new();
-    // contents.push_str(&Conclusion::header());
-
-    // for c in cs.into_iter() {
-    //     contents.push_str(&c.to_csv());
-    // }
-
-    // fs::write("grasps3.csv", &contents);
-    // let ms = grasp::Grasp::all_ms();
-    // for m in ms.iter() {
-    //     println!("{:?}", m.0.alpha);
-    // }
-
-    // let (mut grasp, a) = ms[0].clone();
-    // let best_tour = grasp.shot(&p).tour;
-    // let status = p.eval_route(&best_tour);
-    // println!("tour: {:?}", &best_tour);
-    // println!("score: {}", status.total_score);
-    // println!("consume: {}", status.total_consume);
-    // unsafe {
-    //     let evals = problem::EVALS;
-    //     println!("EVALS: {}", evals);
-    // };
-    // println!("{}", &input);
 }
 
 use problem::oplib;
