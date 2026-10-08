@@ -29,8 +29,35 @@ use metaheuristics::*;
 
 use metaheuristics::experiment::Conclusion;
 
+struct Pet<const N: usize> {
+    buffer: [u8;N],
+    len: u8,
+}
+
 const FILE_NAME: &'static str = "set_64_1_65.txt";
 pub fn main() {
+
+    // let x = 3;
+    // let p0 = &raw const x;
+
+    // const x = 3;
+    // const p0 = &x;
+
+    let mut x = 3;
+    let p0 = &raw mut x;
+    let p1 = &raw mut x;
+
+    unsafe {
+        *p1 += 1;
+        *p0 += 1;
+        *p1 += 1;
+        *p0 += 1;
+    }
+
+    // var x = 3;
+    // const p0 = &x;
+
+
     let header = &Conclusion::header();
     print!("{header}");
     // grasp::Grasp::run_all_ms_in_all_ps(ps, 10);

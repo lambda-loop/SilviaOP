@@ -3,10 +3,12 @@
 // pub mod grasp;
 // pub mod multistart;
 pub mod experiment;
+pub mod memetic;
 
 use experiment::Result as ER;
 use experiment::Conclusion;
 use crate::problem::Problem;
+
 // pub mod simulated_annealing;
 
 const CREDITS: [usize;3] = [
