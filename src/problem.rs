@@ -55,7 +55,24 @@ impl Problem {
         }
     }
 
-    pub fn eval_route(&self, r: &[u8]) -> RouteStatus {
+    pub fn eval_tour(
+        &self,
+        used: &mut u64,
+        budget: u64,
+        tour: &[u8]
+    ) -> Option<TourStatus> {
+        if *used >= budget { return None };
+        *used += 1;
+        let rs = self.eval_route(tour);
+        Some (
+            TourStatus {
+                cost: rs.total_consume,
+                score: rs.total_score
+            }
+        )
+    }
+
+    fn eval_route(&self, r: &[u8]) -> RouteStatus {
         let r_len = r.len();
         let mut total_score: u32 = r.iter().map(|&p| self.scores[p as usize]).sum();
         let mut total_consume = 0.;

@@ -1,6 +1,6 @@
 //
 
-// pub mod grasp;
+pub mod grasp;
 // pub mod multistart;
 pub mod experiment;
 pub mod memetic;
