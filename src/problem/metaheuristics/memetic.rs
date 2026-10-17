@@ -1,5 +1,8 @@
 
 
+use rand::{
+    *, rngs::ThreadRng,
+};
 
 mod local_search;
 mod mutation;
@@ -9,7 +12,9 @@ mod crossing;
 use mutation::*;
 use crossing::*;
 use local_search::*;
-use rand::{*, rngs::ThreadRng};
+use crossing::{
+    MatchMaker, Mate,
+};
 
 use fixedbitset::FixedBitSet as BitSet;
 
@@ -19,7 +24,6 @@ use crate::{
     },
 };
 
-use crate::metaheuristics::grasp::build::Builder;
 pub struct Memetic {
     pub p       : Problem  ,
     pub budget  : u64,
@@ -52,20 +56,17 @@ pub type Grasp = fn(
     &mut ThreadRng      // rng
 ) -> Result<Vec<u8>, OutOfCredits>;
 
-use std::{rc::Rc, cell::Cell};
-fn simple (m: &mut Memetic) -> Result<Vec<u8>, OutOfCredits>{
+fn simple (m: &mut Memetic) -> Vec<u8> {
     assert!(0 < m.cut_size);
     assert!(m.cut_size < m.pop_size);
-    // let used = Rc::new( 
-    //     Cell::new(0u64)
-    // );
+
+    let mut rng = rand::rng();
+
     let mut used = 0u64;
     let p = &m.p;
     let beta = m.beta;
     
-    let used_clone = used.clone();
     let fit = move |status: TourStatus| -> f32 {
-        // let status = p.eval_tour(&mut used, m.budget, tour)?;
         fitness(p, status, beta)
     };
 
@@ -78,8 +79,9 @@ fn simple (m: &mut Memetic) -> Result<Vec<u8>, OutOfCredits>{
             m.budget,
             m.alpha,
             &mut m.rng,
-        )?; // tud obem o "?" aqui..
-
+        ).expect(
+            "GRASP has failed during its build"
+        );
         pop.push(tour);
     }
 
@@ -111,32 +113,50 @@ fn simple (m: &mut Memetic) -> Result<Vec<u8>, OutOfCredits>{
         
        updates_best(
             &m.p,
-            // &mut used,
-            // m.budget,
             &mut best_tour,
             &mut best_score,
             &pop_[..],
         );
+        if pop_.len() <= m.cut_size { return best_tour; }
 
         let (parents, children) = pop_.split_at_mut(m.cut_size);
         for child in children.iter_mut() {
-            let parents = (m.match_maker)(parents);
-            let new_child = (m.mate) (parents);
-            let new_child = (m.mutator)(&mut m.rng, new_child);
-            let mut visited = BitSet::with_capacity(m.p.len);
-            visited.insert(0); visited.insert(1);
-            new_child.iter().for_each(|&p| {
-                visited.insert(p as usize);
-            });
+            // SELECTIOn
+            let (pl, pr) = (m.match_maker)(parents, &mut rng);
+
+            // MATE
+            let new_child = (m.mate) (pl, pr, &mut rng);
+            let Some(status) = m.p.eval_tour(&mut used, m.budget, &new_child)
+            else { return best_tour };
+
+            if status.cost <= m.p.tmax && status.score > best_score {
+                best_score = status.score;
+                best_tour = new_child.clone();
+            }
+
+            let mut visited = new_visited(&m.p, &new_child);
+
+            // MUTATION
+            let new_child = (m.mutator)(
+                &m.p,
+                &new_child,
+                status,
+                &mut visited,
+                &mut m.rng, 
+            );
             
             let Some(status) = m.p.eval_tour(
                 &mut used,
                 m.budget,
                 &new_child,
-            ) else { return Ok(best_tour); };
-            let fitness = fit(status);
+            ) else { return best_tour; };
 
-            let ctx = LocalSearchCtx {
+            if status.cost <= m.p.tmax && status.score > best_score {
+                best_score = status.score;
+                best_tour = new_child.clone();
+            } let fitness = fit(status);
+
+            let mut ctx = LocalSearchCtx {
                 p: &m.p,
                 tour: new_child,
                 status, fit: fitness,
@@ -148,8 +168,9 @@ fn simple (m: &mut Memetic) -> Result<Vec<u8>, OutOfCredits>{
                 visited,
             };
 
-            match (m.searcher)(ctx) {
-                Err(_) => return Ok(best_tour),
+            // LOCAL SEARCH
+            match (m.searcher)(&mut ctx) {
+                Err(_) => return best_tour,
                 Ok((well_educated_child, status, fit)) => {
                     if status.cost <= m.p.tmax && status.score > best_score {
                         best_score = status.score;
@@ -172,7 +193,6 @@ fn simple (m: &mut Memetic) -> Result<Vec<u8>, OutOfCredits>{
 
 // static fitness
 fn fitness(p: &Problem, status: TourStatus, beta: i32) -> f32 {
-    // let status = p.eval_route(tour);
 
     let score = status.score as f32;
     let cost = status.cost;
@@ -189,7 +209,6 @@ fn fitness(p: &Problem, status: TourStatus, beta: i32) -> f32 {
 // assumes that its ordered
 // trys to change a current best to a new FEASIBLE one
 
-use crate::consume_credit;
 fn updates_best(
     p: &Problem,
     // used: &mut usize,
@@ -199,8 +218,6 @@ fn updates_best(
     pop: &[(Vec<u8>, f32, TourStatus)] // assumed to be sorted
 ) {
     for (tour, _, status) in pop {
-        // consume_credit!(used, budget);
-        // let status = p.eval_route(tour);
         if status.score <= *best_score { return () }
         if status.cost > p.tmax { continue }
 
@@ -211,4 +228,23 @@ fn updates_best(
     } 
 
     // Ok(())
+}
+
+pub fn update_visited(
+    tour: &[u8],
+    visited: &mut BitSet
+) {
+    visited.set_range(2.., false);
+    for &v in tour {
+        visited.insert(v as usize);
+    }
+}
+
+fn new_visited(p: &Problem, tour: &[u8]) -> BitSet {
+    let mut visited = BitSet::with_capacity(p.len);
+    visited.insert_range(0..2);
+    for &v in tour {
+        visited.insert(v as usize);
+    }
+    visited
 }

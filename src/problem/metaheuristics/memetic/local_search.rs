@@ -3,10 +3,16 @@ use rand::*;
 use rand::rngs::ThreadRng;
 
 use fixedbitset::FixedBitSet as BitSet;
-use crate::problem::TourStatus;
+use crate::{
+    OutOfCredits,
+    problem::{
+        TourStatus,
+        Problem,
+    },
+};
 
 pub type LocalSearcher =
-    Box<dyn Fn(LocalSearchCtx)
+    Box<dyn Fn(&mut LocalSearchCtx)
                -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits>>;
 pub struct LocalSearchCtx<'a> {
     pub p            : &'a Problem          ,
@@ -23,17 +29,14 @@ pub struct LocalSearchCtx<'a> {
 
 // cria N e depois pega a mlr. Nao mantem a original!
 
-use crate::consume_credit;
-use crate::problem::route::RouteStatus;
-use crate::{problem::Problem, OutOfCredits};
 pub fn two_opt<'a>(
-    ctx: LocalSearchCtx<'a>
+    ctx: &mut LocalSearchCtx<'a>
 ) -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits> {
     if *ctx.used >= ctx.budget { return Err(OutOfCredits) }
     let n = ctx.tour.len();
 
     if n < 2 || ctx.neighborhood == 0 {
-        return Ok((ctx.tour, ctx.status, ctx.fit));
+        return Ok((ctx.tour.clone(), ctx.status, ctx.fit));
     }
 
     // generates first tour
@@ -83,12 +86,12 @@ pub fn two_opt<'a>(
 }
 
 pub fn insert<'a>(
-    mut ctx: LocalSearchCtx<'a>
+    mut ctx: &mut LocalSearchCtx<'a>
 ) -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits> {
     if *ctx.used >= ctx.budget { return Err(OutOfCredits) }
     let bound = ctx.visited.count_zeroes(2..ctx.p.len);
     if bound == 0 || ctx.neighborhood == 0 {
-        return Ok((ctx.tour, ctx.status, ctx.fit));
+        return Ok((ctx.tour.clone(), ctx.status, ctx.fit));
     }
 
     let (
@@ -152,12 +155,12 @@ pub fn insert<'a>(
 }
 
 pub fn remove<'a>(
-    mut ctx: LocalSearchCtx<'a>
+    ctx: &mut LocalSearchCtx<'a>
 ) -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits> {
     if *ctx.used >= ctx.budget { return Err(OutOfCredits) }
     let tour_len = ctx.tour.len();
     if tour_len < 1 || ctx.neighborhood == 0 {
-        return Ok((ctx.tour, ctx.status, ctx.fit));
+        return Ok((ctx.tour.clone(), ctx.status, ctx.fit));
     }
 
     let (
@@ -198,6 +201,35 @@ pub fn remove<'a>(
 
     Ok((best_tour, best_status, best_fitness))
 }
+
+// thats used after some mutation!
+pub fn local_search<'a>(
+    ctx: &mut LocalSearchCtx<'a>
+) -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits> {
+    search(Box::new(two_opt), ctx);
+    search(Box::new(insert ), ctx);
+    search(Box::new(two_opt), ctx);
+    search(Box::new(remove ), ctx);
+    search(Box::new(two_opt), ctx);
+    Ok((ctx.tour.to_owned(), ctx.status, ctx.fit))
+}
+
+use super::update_visited;
+pub fn search<'a>(
+    searcher: LocalSearcher,
+    ctx: &mut LocalSearchCtx,
+) {
+    let (tour, status, fit) = match (searcher)(ctx) {
+        Err(_) => return,
+        Ok(new) => new,
+    };
+        
+    ctx.tour = tour;
+    ctx.status = status;
+    ctx.fit = fit;
+    update_visited(&ctx.tour, &mut ctx.visited);
+}
+
 
 // 2-opt	Reorganiza a rota para reduzir seu custo, preservando os vértices visitados.
 // Inserção	Adiciona vértices externos, priorizando a maior razão prêmio / aumento de custo.

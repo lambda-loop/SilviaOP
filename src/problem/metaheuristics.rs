@@ -91,6 +91,8 @@ pub trait Method where Self:Sized {
 
 
 ////////////////// credits system:
+
+#[derive(Debug)]
 pub struct OutOfCredits;
 
 #[macro_export]
