@@ -43,16 +43,6 @@ pub fn main() {
     // const x = 3;
     // const p0 = &x;
 
-    let mut x = 3;
-    let p0 = &raw mut x;
-    let p1 = &raw mut x;
-
-    unsafe {
-        *p1 += 1;
-        *p0 += 1;
-        *p1 += 1;
-        *p0 += 1;
-    }
 
     // var x = 3;
     // const p0 = &x;
@@ -60,7 +50,8 @@ pub fn main() {
 
     let header = &Conclusion::header();
     print!("{header}");
-    // grasp::Grasp::run_all_ms_in_all_ps(ps, 10);
+    let ps = all_problems();
+    memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
     println!("acabou!")
 
 }

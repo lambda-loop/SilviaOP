@@ -32,7 +32,7 @@ pub struct Conclusion {
     pub mean_time: f32,
 
     pub num_shots: usize,
-    pub credits: usize,
+    pub credits: u64,
     pub extra_info: String,
 
 }
@@ -44,7 +44,7 @@ impl Conclusion {
         problem_name: String,
         method_name: String,
         num_shots: usize,
-        credits: usize,
+        credits: u64,
         extra_info: String,
     ) -> Self {
         let mut rs: Vec<_> = rs.into_iter().map(|r| {

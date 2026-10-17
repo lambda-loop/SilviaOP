@@ -28,8 +28,8 @@ use super::strategy::{
 
 pub type Builder = fn(
     &Problem,
-    &mut usize,
-    usize,
+    &mut u64,
+    u64,
     f32,
     &mut ThreadRng
 ) -> Result<Vec<u8>, OutOfCredits>;
@@ -38,8 +38,8 @@ use crate::consume_credit;
 
 pub fn build_classical(
     p: &Problem,
-    used: &mut usize,
-    budget: usize,
+    used: &mut u64,
+    budget: u64,
     alpha: f32,
     rng: &mut ThreadRng,
 ) -> Result<Vec<u8>, OutOfCredits> {
@@ -77,8 +77,8 @@ pub fn build_classical(
 
 pub fn build_rand(
     p: &Problem,
-    used: &mut usize,
-    budget: usize,
+    used: &mut u64,
+    budget: u64,
     alpha: f32,
     rng: &mut ThreadRng,
 ) -> Result<Vec<u8>, OutOfCredits> {
@@ -118,8 +118,8 @@ pub fn build_rand(
 fn select_candidates(
     p: &Problem,
     tour: &[u8],
-    used: &mut usize,
-    budget: usize,
+    used: &mut u64,
+    budget: u64,
     alpha: f32,
     visited: &Set,
     conversor: Conversor,

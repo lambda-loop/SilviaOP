@@ -11,7 +11,7 @@ use crate::problem::Problem;
 
 // pub mod simulated_annealing;
 
-const CREDITS: [usize;3] = [
+const CREDITS: [u64;3] = [
     100_000   ,
     1_000_000 ,
     10_000_000,
@@ -20,11 +20,11 @@ const CREDITS: [usize;3] = [
 use rayon::prelude::*;
 pub trait Method where Self:Sized {
     // type Args;
-    fn shot(&mut self, p: &Problem, credits: usize) -> ER;
+    fn shot(&mut self, p: &Problem, credits: u64) -> ER;
     fn run (
         &mut self,
         p: &Problem,
-        credits: usize,
+        credits: u64,
         num_shots: usize,
         problem_name: &str,
         method_name : &str,

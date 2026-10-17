@@ -32,14 +32,25 @@ pub enum Relink{
     None,
 }
 
-#[derive(Clone)]
-pub struct Grasp {
-    pub num_builds: usize,
-    pub alpha: f32,
-    pub rng: ThreadRng,
-    pub relink: Relink,
-    pub builder: Builder,
-}
+// #[derive(Clone)]
+// pub struct Grasp {
+//     pub num_builds: usize,
+//     pub alpha: f32,
+//     pub rng: ThreadRng,
+//     pub relink: Relink,
+//     pub builder: Builder,
+// }
+
+use crate::OutOfCredits;
+pub type Grasp = fn(
+    &Problem,           // p
+    &mut u64,           // used
+    u64,                // budget
+    f32,                // alpha 
+    &mut ThreadRng      // rng
+) -> Result<Vec<u8>, OutOfCredits>;
+
+// const grasp_rand: Grasp = build_rand;
 
 // use crate::consume_credit;
 // use super::Method;

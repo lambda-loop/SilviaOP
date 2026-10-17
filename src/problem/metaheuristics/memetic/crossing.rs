@@ -13,22 +13,30 @@ pub type MatchMaker = Box<
 pub type Mate = Box<dyn Fn(&[u8], &[u8], &mut ThreadRng) -> Vec<u8>>;
 
 pub fn rejoin(
-    l: &[u8], // thats a parent
-    r: &[u8], // thats a parent
-    rng: &mut ThreadRng
+    l: &[u8],
+    r: &[u8],
+    rng: &mut ThreadRng,
 ) -> Vec<u8> {
-    if l.is_empty() { return r.to_vec() }
-    if r.is_empty() { return l.to_vec() }
-    let l_len = l.len();
-    let r_len = r.len();
+    let (l_idx, r_idx) = if l.is_empty() || r.is_empty() {
+        (l.len(), 0)
+    } else {
+        (
+            rng.random_range(0..=l.len() / 2),
+            rng.random_range(r.len() / 2..r.len()),
+        )
+    };
 
-    let l_idx = rng.random_range(0..=l_len/2);
-    let r_idx = rng.random_range(r_len/2..r_len);
+    let mut child = Vec::with_capacity(l_idx + r.len() - r_idx);
+    let mut visited = [false; 256];
 
-    let mut child = Vec::with_capacity(l_len + r_len - r_idx);
+    for &v in l[..l_idx].iter().chain(r[r_idx..].iter()) {
+        let idx = v as usize;
 
-    child.extend_from_slice(&l[..l_idx]);
-    child.extend_from_slice(&r[r_idx..]);
+        if !visited[idx] {
+            visited[idx] = true;
+            child.push(v);
+        }
+    }
 
     child
 }

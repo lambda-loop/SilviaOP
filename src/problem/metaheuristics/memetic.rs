@@ -25,8 +25,8 @@ use crate::{
 };
 
 pub struct Memetic {
-    pub p       : Problem  ,
-    pub budget  : u64,
+    // pub p       : Problem  ,
+    // pub budget  : u64,
 
     // builder alpha for the grasp
     pub alpha   : f32      , 
@@ -41,8 +41,8 @@ pub struct Memetic {
     pub grasp: Grasp,
     pub match_maker : MatchMaker,
     pub mate        : Mate,
-    pub mutator : Mutator  ,
-    pub searcher: LocalSearcher,
+    pub mutator     : Mutator  ,
+    pub searcher    : LocalSearcher,
 
     
 }
@@ -56,14 +56,18 @@ pub type Grasp = fn(
     &mut ThreadRng      // rng
 ) -> Result<Vec<u8>, OutOfCredits>;
 
-fn simple (m: &mut Memetic) -> Vec<u8> {
+fn simple (
+    m: &mut Memetic,
+    p: &Problem,
+    budget: u64
+) -> Vec<u8> {
     assert!(0 < m.cut_size);
     assert!(m.cut_size < m.pop_size);
 
     let mut rng = rand::rng();
 
     let mut used = 0u64;
-    let p = &m.p;
+    // let p_ = p;
     let beta = m.beta;
     
     let fit = move |status: TourStatus| -> f32 {
@@ -74,9 +78,9 @@ fn simple (m: &mut Memetic) -> Vec<u8> {
     let mut pop = Vec::with_capacity(m.pop_size);
     for _ in 0..pop_size {
         let tour = (m.grasp)(
-            &m.p,
+            p,
             &mut used,
-            m.budget,
+            budget,
             m.alpha,
             &mut m.rng,
         ).expect(
@@ -86,20 +90,17 @@ fn simple (m: &mut Memetic) -> Vec<u8> {
     }
 
     let mut best_tour = pop[0].clone();
-    let mut best_score = m.p.eval_tour(
+    let mut best_score = p.eval_tour(
         &mut used,
-        m.budget,
+        budget,
         &best_tour
     ).unwrap().score;
-    // theres no way all the budget will be used
-   // in THE FIRST STEP STUPID AIs!
 
     let mut pop_ = Vec::with_capacity(m.pop_size);
-    for i in 0..pop_size {
-        let tour = pop[i].clone(); // TODO: fix, its slow (not for ai)
-        let Some(status) = m.p.eval_tour(
+    for tour in pop {
+        let Some(status) = p.eval_tour(
             &mut used,
-            m.budget,
+            budget,
             &tour) else { break };
 
         let fit = fit(status);
@@ -112,7 +113,7 @@ fn simple (m: &mut Memetic) -> Vec<u8> {
         });
         
        updates_best(
-            &m.p,
+            p,
             &mut best_tour,
             &mut best_score,
             &pop_[..],
@@ -126,41 +127,41 @@ fn simple (m: &mut Memetic) -> Vec<u8> {
 
             // MATE
             let new_child = (m.mate) (pl, pr, &mut rng);
-            let Some(status) = m.p.eval_tour(&mut used, m.budget, &new_child)
+            let Some(status) = p.eval_tour(&mut used, budget, &new_child)
             else { return best_tour };
 
-            if status.cost <= m.p.tmax && status.score > best_score {
+            if status.cost <= p.tmax && status.score > best_score {
                 best_score = status.score;
                 best_tour = new_child.clone();
             }
 
-            let mut visited = new_visited(&m.p, &new_child);
+            let mut visited = new_visited(p, &new_child);
 
             // MUTATION
             let new_child = (m.mutator)(
-                &m.p,
+                p,
                 &new_child,
                 status,
                 &mut visited,
                 &mut m.rng, 
             );
             
-            let Some(status) = m.p.eval_tour(
+            let Some(status) = p.eval_tour(
                 &mut used,
-                m.budget,
+                budget,
                 &new_child,
             ) else { return best_tour; };
 
-            if status.cost <= m.p.tmax && status.score > best_score {
+            if status.cost <= p.tmax && status.score > best_score {
                 best_score = status.score;
                 best_tour = new_child.clone();
             } let fitness = fit(status);
 
             let mut ctx = LocalSearchCtx {
-                p: &m.p,
+                p: p,
                 tour: new_child,
                 status, fit: fitness,
-                budget: m.budget,
+                budget: budget,
                 used: &mut used,
                 neighborhood: m.neighborhood_size,
                 rng: &mut m.rng,
@@ -172,7 +173,7 @@ fn simple (m: &mut Memetic) -> Vec<u8> {
             match (m.searcher)(&mut ctx) {
                 Err(_) => return best_tour,
                 Ok((well_educated_child, status, fit)) => {
-                    if status.cost <= m.p.tmax && status.score > best_score {
+                    if status.cost <= p.tmax && status.score > best_score {
                         best_score = status.score;
                         best_tour = well_educated_child.clone();
                     }
@@ -184,12 +185,6 @@ fn simple (m: &mut Memetic) -> Vec<u8> {
     }
 }
 
-// performs both of the things: cuts and reproduce
-// fn select(mut tours: Vec<Vec<u8>>) -> Vec<Vec<u8>> {
-
-    
-    
-// }
 
 // static fitness
 fn fitness(p: &Problem, status: TourStatus, beta: i32) -> f32 {
@@ -201,18 +196,9 @@ fn fitness(p: &Problem, status: TourStatus, beta: i32) -> f32 {
         score * (p.tmax / cost).powi(beta as i32)
     }
 }
- // h  ← 100                  // tamanho da população
- //    pc ← 0,70                 // probabilidade de cruzamento
- //    pm ← 0,40                 // probabilidade de mutação
- //    α  ← 4                    // intensidade da penalização
-
-// assumes that its ordered
-// trys to change a current best to a new FEASIBLE one
 
 fn updates_best(
     p: &Problem,
-    // used: &mut usize,
-    // budget: usize,
     best_tour: &mut Vec<u8>,
     best_score: &mut u32,
     pop: &[(Vec<u8>, f32, TourStatus)] // assumed to be sorted
@@ -224,10 +210,8 @@ fn updates_best(
         *best_score = status.score;
         *best_tour = tour.clone();
         return ()
-        // return Ok(());
     } 
 
-    // Ok(())
 }
 
 pub fn update_visited(
@@ -248,3 +232,74 @@ fn new_visited(p: &Problem, tour: &[u8]) -> BitSet {
     }
     visited
 }
+
+
+use crate::metaheuristics::{
+    experiment::Result as ER,
+    Method,
+};
+impl Method for Memetic {
+    fn shot(&mut self, p: &Problem, budget: u64) -> ER {
+        let start = std::time::Instant::now();
+        let tour = simple(self, p, budget);
+        ER {
+            tour,
+            time: start.elapsed(),
+        }
+    }
+
+    fn all_ms() -> Vec<(Self, String)> {
+        let alphas = vec![
+            0.1,
+            0.2,
+            0.3,
+            0.4,
+            0.5,
+            0.6,
+            0.7,
+            0.8,
+            0.9,
+        ];
+
+        let mut ms = Vec::new();
+        for alpha in alphas {
+            for pop_size in POP_SIZES {
+                for cut_size in CUT_SIZES {
+                    for neighborhood_size in NEIGHBORHOOD_SIZES {
+                        for (grasp, g_name) in GRASPS {
+                            let rng = rand::rng();
+                            let m = Memetic {
+                                alpha, beta: 04, rng,
+                                pop_size, cut_size, neighborhood_size,
+                                grasp      : grasp,
+                                match_maker: Box::new(crossing::random_match),
+                                mate       : Box::new(rejoin),
+                                mutator    : Box::new(adaptative),
+                                searcher   : Box::new(local_search),
+                            };
+
+                            let m_name
+                                = format!("memetic-alpha:{}-pop_size:{}-cut_size:{}-neighborhood_size:{}-grasp:{}",
+                                          alpha,
+                                          pop_size,
+                                          cut_size,
+                                          neighborhood_size,
+                                          g_name,
+                            );
+
+                            ms.push((m, m_name));
+                        }
+                    }
+                }
+            }
+        }
+
+        ms
+    }
+}
+
+use crate::metaheuristics::grasp::build::*;
+const GRASPS: [(Grasp, &'static str);2] = [(build_rand, "build_rand"), (build_classical, "build_classical")];
+const POP_SIZES: [usize; 3] = [ 100, 75, 50 ];
+const CUT_SIZES: [usize; 3] = [ 10, 20, 30];
+const NEIGHBORHOOD_SIZES: [usize; 3] = [ 15, 10, 05];
