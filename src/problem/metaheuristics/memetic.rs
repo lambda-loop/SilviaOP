@@ -7,8 +7,10 @@ use rand::{
 mod local_search;
 mod mutation;
 mod crossing;
+mod birth;
 // use std::collections::HashSet;
 
+use birth::*;
 use mutation::*;
 use crossing::*;
 use local_search::*;
@@ -38,7 +40,8 @@ pub struct Memetic {
     pub cut_size: usize    ,
     pub neighborhood_size: usize    ,
 
-    pub grasp: Grasp,
+    // pub grasp: Grasp,
+    pub birth       : Birth,
     pub match_maker : MatchMaker,
     pub mate        : Mate,
     pub mutator     : Mutator  ,
@@ -74,21 +77,7 @@ fn simple (
         fitness(p, status, beta)
     };
 
-    let pop_size = m.pop_size;
-    let mut pop = Vec::with_capacity(m.pop_size);
-    for _ in 0..pop_size {
-        let tour = (m.grasp)(
-            p,
-            &mut used,
-            budget,
-            m.alpha,
-            &mut m.rng,
-        ).expect(
-            "GRASP has failed during its build"
-        );
-        pop.push(tour);
-    }
-
+    let pop = (m.birth)(p.len, m.pop_size, &mut rng);
     let mut best_tour = pop[0].clone();
     let mut best_score = p.eval_tour(
         &mut used,
@@ -126,7 +115,7 @@ fn simple (
             let (pl, pr) = (m.match_maker)(parents, &mut rng);
 
             // MATE
-            let new_child = (m.mate) (pl, pr, &mut rng);
+            let new_child = (m.mate) (pl, pr, p.len, &mut rng);
             let Some(status) = p.eval_tour(&mut used, budget, &new_child)
             else { return best_tour };
 
@@ -271,7 +260,7 @@ impl Method for Memetic {
                             let m = Memetic {
                                 alpha, beta: 04, rng,
                                 pop_size, cut_size, neighborhood_size,
-                                grasp      : grasp,
+                                birth      : Box::new(birth::simple),
                                 match_maker: Box::new(crossing::random_match),
                                 mate       : Box::new(rejoin),
                                 mutator    : Box::new(adaptative),
