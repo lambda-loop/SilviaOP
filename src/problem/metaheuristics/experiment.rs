@@ -7,6 +7,7 @@ use crate::problem::Problem;
 pub struct Result {
     pub tour: Vec<u8>,
     pub time: std::time::Duration,
+    pub iters: u64,
 }
 
 #[derive(Debug)]
@@ -30,6 +31,7 @@ pub struct Conclusion {
 
     // in millis 
     pub mean_time: f32,
+    pub mean_iters: f64,
 
     pub num_shots: usize,
     pub credits: u64,
@@ -87,6 +89,9 @@ impl Conclusion {
 
         let problem_size = p.len;
         let problem_budget = p.tmax;
+        let mean_iters = rs.iter()
+            .map(|(r, _)| r.iters as f64)
+            .sum::<f64>() / rs.len() as f64;
         
         Self {
             problem_name,
@@ -107,6 +112,7 @@ impl Conclusion {
             best_tour,
             
             mean_time,
+            mean_iters,
 
             num_shots,
             credits,
@@ -116,7 +122,7 @@ impl Conclusion {
 
     pub fn header() -> String {
         format!(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             "problem_name",
             "problem_size",
             "problem_budget",
@@ -133,6 +139,7 @@ impl Conclusion {
             "best_tour",
 
             "mean_time",
+            "mean_iters",
 
             "num_shots",
             "credits",
@@ -142,7 +149,7 @@ impl Conclusion {
 
     pub fn to_csv(&self) -> String {
         format!(
-            "{},{},{:1},{},{:.1},{:.1},{:.2},{:.2},{:.4},{:.4},\"{:?}\",\"{:?}\",{:.2},{},{},{}\n",
+            "{},{},{:1},{},{:.1},{:.1},{:.2},{:.2},{:.4},{:.4},\"{:?}\",\"{:?}\",{:.2},{:.2},{},{},{}\n",
             self.problem_name,
             self.problem_size,
             self.problem_budget,
@@ -158,6 +165,7 @@ impl Conclusion {
             self.best_tour,
 
             self.mean_time,
+            self.mean_iters,
 
             self.num_shots,
             self.credits,

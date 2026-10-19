@@ -63,9 +63,10 @@ fn simple (
     m: &mut Memetic,
     p: &Problem,
     budget: u64
-) -> Vec<u8> {
+) -> (Vec<u8>, u64) {
     assert!(0 < m.cut_size);
     assert!(m.cut_size < m.pop_size);
+    let mut iters = 0u64;
 
     let mut rng = rand::rng();
 
@@ -107,7 +108,7 @@ fn simple (
             &mut best_score,
             &pop_[..],
         );
-        if pop_.len() <= m.cut_size { return best_tour; }
+        if pop_.len() <= m.cut_size { return (best_tour, iters); }
 
         let (parents, children) = pop_.split_at_mut(m.cut_size);
         for child in children.iter_mut() {
@@ -117,7 +118,7 @@ fn simple (
             // MATE
             let new_child = (m.mate) (pl, pr, p.len, &mut rng);
             let Some(status) = p.eval_tour(&mut used, budget, &new_child)
-            else { return best_tour };
+            else { return (best_tour, iters) };
 
             if status.cost <= p.tmax && status.score > best_score {
                 best_score = status.score;
@@ -139,7 +140,7 @@ fn simple (
                 &mut used,
                 budget,
                 &new_child,
-            ) else { return best_tour; };
+            ) else { return (best_tour, iters); };
 
             if status.cost <= p.tmax && status.score > best_score {
                 best_score = status.score;
@@ -160,7 +161,7 @@ fn simple (
 
             // LOCAL SEARCH
             match (m.searcher)(&mut ctx) {
-                Err(_) => return best_tour,
+                Err(_) => return (best_tour, iters),
                 Ok((well_educated_child, status, fit)) => {
                     if status.cost <= p.tmax && status.score > best_score {
                         best_score = status.score;
@@ -171,6 +172,7 @@ fn simple (
                 },
             }
         }
+        iters += 1;
     }
 }
 
@@ -230,9 +232,10 @@ use crate::metaheuristics::{
 impl Method for Memetic {
     fn shot(&mut self, p: &Problem, budget: u64) -> ER {
         let start = std::time::Instant::now();
-        let tour = simple(self, p, budget);
+        let (tour, iters) = simple(self, p, budget);
         ER {
             tour,
+            iters,
             time: start.elapsed(),
         }
     }
@@ -289,6 +292,6 @@ impl Method for Memetic {
 
 use crate::metaheuristics::grasp::build::*;
 const GRASPS: [(Grasp, &'static str);2] = [(build_rand, "build_rand"), (build_classical, "build_classical")];
-const POP_SIZES: [usize; 3] = [ 100, 75, 50 ];
+const POP_SIZES: [usize; 3] = [ 100, 76, 50 ];
 const CUT_SIZES: [usize; 3] = [ 10, 20, 30];
 const NEIGHBORHOOD_SIZES: [usize; 3] = [ 15, 10, 05];

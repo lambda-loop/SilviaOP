@@ -73,7 +73,12 @@ impl Problem {
     }
 
     fn eval_route(&self, r: &[u8]) -> RouteStatus {
-        let r_len = r.len();
+        if r.is_empty() {
+            return RouteStatus {
+                total_consume: self.costs[(0, 1)],
+                total_score: 0,
+            };
+        }        let r_len = r.len();
         let mut total_score: u32 = r.iter().map(|&p| self.scores[p as usize]).sum();
         let mut total_consume = 0.;
 
