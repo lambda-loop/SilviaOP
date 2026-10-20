@@ -3,6 +3,7 @@
 pub mod grasp;
 // pub mod multistart;
 pub mod experiment;
+pub mod ant_colony;
 pub mod memetic;
 
 use experiment::Result as ER;
