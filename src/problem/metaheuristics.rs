@@ -11,11 +11,11 @@ use crate::problem::Problem;
 
 // pub mod simulated_annealing;
 
-const CREDITS: [u64;4] = [
+const CREDITS: [u64;2] = [
     100_000   ,
     1_000_000 ,
-    10_000_000,
-    100_000_000,
+    // 10_000_000,
+    // 100_000_000,
 ];
 
 use rayon::prelude::*;
