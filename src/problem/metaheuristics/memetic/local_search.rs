@@ -235,3 +235,8 @@ pub fn search<'a>(
 // Inserção	Adiciona vértices externos, priorizando a maior razão prêmio / aumento de custo.
 // Remoção	Recupera a viabilidade de rotas acima do orçamento, priorizando a menor razão prêmio / economia de custo.
 
+pub fn id<'a>(
+    ctx: &mut LocalSearchCtx<'a>
+) -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits> {
+    Ok((ctx.tour.clone(), ctx.status, ctx.fit))
+}

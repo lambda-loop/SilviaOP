@@ -267,7 +267,29 @@ impl Method for Memetic {
                             };
 
                             let m_name
-                                = format!("pop_size:{}-cut_size:{}-neighborhood_size:{}",
+                                = format!("memetic-pop_size:{}-cut_size:{}-neighborhood_size:{}",
+                                          // alpha,
+                                          pop_size,
+                                          cut_size,
+                                          neighborhood_size,
+                                          // g_name,
+                            );
+
+                            ms.push((m, m_name));
+
+                            let rng = rand::rng();
+                            let m = Memetic {
+                                /*alpha,*/ beta: 04, rng,
+                                pop_size, cut_size, neighborhood_size,
+                                birth      : Box::new(birth::simple),
+                                match_maker: Box::new(crossing::random_match),
+                                mate       : Box::new(rejoin),
+                                mutator    : Box::new(adaptative),
+                                searcher   : Box::new(id),
+                            };
+
+                            let m_name
+                                = format!("genetic-pop_size:{}-cut_size:{}-neighborhood_size:{}",
                                           // alpha,
                                           pop_size,
                                           cut_size,
