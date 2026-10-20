@@ -9,6 +9,7 @@
 
 // use super::{Conversor, Candidate, marginal_smart};
 
+// THATS ACCTUALLY, THE GRASP..
 
 use fixedbitset::FixedBitSet as Set;
 use rand::*;

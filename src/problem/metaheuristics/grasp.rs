@@ -32,14 +32,16 @@ pub enum Relink{
     None,
 }
 
-// #[derive(Clone)]
-// pub struct Grasp {
-//     pub num_builds: usize,
-//     pub alpha: f32,
-//     pub rng: ThreadRng,
-//     pub relink: Relink,
-//     pub builder: Builder,
-// }
+#[derive(Clone)]
+pub struct GraspPR {
+    pub budget: usize,
+    pub alpha: f32,
+    pub rng: ThreadRng,
+    pub relink: Relink,
+    pub builder: Builder,
+}
+
+
 
 use crate::OutOfCredits;
 pub type Grasp = fn(

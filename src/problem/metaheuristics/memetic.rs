@@ -31,7 +31,7 @@ pub struct Memetic {
     // pub budget  : u64,
 
     // builder alpha for the grasp
-    pub alpha   : f32      , 
+    // pub alpha   : f32      , 
     // fitness paramter from the paper
     pub beta    : i32      ,
     pub rng     : ThreadRng,
@@ -79,12 +79,8 @@ fn simple (
     };
 
     let pop = (m.birth)(p.len, m.pop_size, &mut rng);
-    let mut best_tour = pop[0].clone();
-    let mut best_score = p.eval_tour(
-        &mut used,
-        budget,
-        &best_tour
-    ).unwrap().score;
+    let mut best_tour = Vec::new();
+    let mut best_score = 0u32;
 
     let mut pop_ = Vec::with_capacity(m.pop_size);
     for tour in pop {
@@ -254,14 +250,14 @@ impl Method for Memetic {
         ];
 
         let mut ms = Vec::new();
-        for alpha in alphas {
+        // for alpha in alphas {
             for pop_size in POP_SIZES {
                 for cut_size in CUT_SIZES {
                     for neighborhood_size in NEIGHBORHOOD_SIZES {
-                        for (grasp, g_name) in GRASPS {
+                        // for (_grasp, g_name) in GRASPS {
                             let rng = rand::rng();
                             let m = Memetic {
-                                alpha, beta: 04, rng,
+                                /*alpha,*/ beta: 04, rng,
                                 pop_size, cut_size, neighborhood_size,
                                 birth      : Box::new(birth::simple),
                                 match_maker: Box::new(crossing::random_match),
@@ -271,18 +267,18 @@ impl Method for Memetic {
                             };
 
                             let m_name
-                                = format!("memetic-alpha:{}-pop_size:{}-cut_size:{}-neighborhood_size:{}-grasp:{}",
-                                          alpha,
+                                = format!("pop_size:{}-cut_size:{}-neighborhood_size:{}",
+                                          // alpha,
                                           pop_size,
                                           cut_size,
                                           neighborhood_size,
-                                          g_name,
+                                          // g_name,
                             );
 
                             ms.push((m, m_name));
                         }
-                    }
-                }
+                    // }
+                // }
             }
         }
 
