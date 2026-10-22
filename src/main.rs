@@ -55,6 +55,7 @@ pub fn main() {
     println!("acabou-simples!");
     let ps = oplib_problems();
     memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
+    println!("acabou-tudo!");
 
 }
 

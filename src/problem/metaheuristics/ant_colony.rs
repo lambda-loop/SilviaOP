@@ -1,5 +1,11 @@
 
 use grid::Grid;
+use rand::{
+    *, rngs::ThreadRng,
+    seq::IndexedRandom
+};
+
+
 use fixedbitset::FixedBitSet as BitSet;
 use macroquad::input::KeyCode::O;
 
@@ -23,6 +29,7 @@ pub struct ACO {
 
 impl ACO {
     fn run(&self, p: &Problem, budget: u64) -> Vec<u8> {
+        let mut rng = rand::rng();
         let mut used = 0u64;
         let mut taff = Grid::init(p.len, p.len, self.t0);
 
@@ -68,9 +75,9 @@ impl ACO {
 
 
                     let (chosen_j, chosen_cost) = if sum > 0. {
-                        raffle_roulette(candidates)
+                        raffle_roulette(&mut rng, candidates)
                     } else {
-                        raffle_uniform(candidates)
+                        raffle_uniform(&mut rng, candidates)
                     };
 
                     tour.push(chosen_j);
@@ -94,13 +101,34 @@ impl ACO {
     }
 }
 
-fn raffle_uniform (candidates: Vec<(usize, f32, f32)>) -> (u8, f32) {
-    todo!()
+fn raffle_uniform (
+    rng: &mut ThreadRng,
+    candidates: Vec<(usize, f32, f32)>
+) -> (u8, f32) {
+    let idx = rng.random_range(0..candidates.len());
+    let (j, cost, _) = candidates[idx];
+    (j as u8, cost)
 }
 
-fn raffle_roulette (candidates: Vec<(usize, f32, f32)>) -> (u8, f32) {
-    todo!()
+fn raffle_roulette(
+    rng: &mut ThreadRng,
+    candidates: Vec<(usize, f32, f32)>,
+) -> (u8, f32) {
+    let &(index, value, _) = candidates
+        .choose_weighted(rng, |candidate| candidate.2)
+        .expect("Invalid roulette weights");
+
+    (u8::try_from(index).expect("Index exceeds u8::MAX"), value)
 }
 
-fn evaporation(taff: &mut Grid<f32>, rho: f32) {}
-fn reinforcement (taff: &mut Grid<f32>, tour: &[u8], score: u32, Q: f32) {}
+fn evaporation(
+    taff: &mut Grid<f32>,
+    rho: f32
+) {}
+
+fn reinforcement (
+    taff: &mut Grid<f32>,
+    tour: &[u8],
+    score: u32,
+    Q: f32
+) {}
