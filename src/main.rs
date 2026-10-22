@@ -37,6 +37,8 @@ struct Pet<const N: usize> {
 const FILE_NAME: &'static str = "set_64_1_65.txt";
 pub fn main() {
 
+    let x = 1024;
+    let buffer = Box<[u8, 1024]>;
     // let x = 3;
     // let p0 = &raw const x;
 
@@ -53,9 +55,9 @@ pub fn main() {
     let ps = all_problems();
     memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
     println!("acabou-simples!");
-    let ps = oplib_problems();
-    memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
-    println!("acabou-tudo!");
+    // let ps = oplib_problems();
+    // memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
+    // println!("acabou-tudo!");
 
 }
 

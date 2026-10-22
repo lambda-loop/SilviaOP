@@ -1,0 +1,39 @@
+Warning:
+Processed 209974 events and lost 52 chunks!
+
+Check IO/CPU overload!
+
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 366
+#
+# Samples: 171K of event 'cpu/cycles/Pu'
+# Event count (approx.): 6515460437485
+#
+# Overhead  Command          Shared Object         Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+# ........  ...............  ....................  .................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+  [31m  22.56%[m  OrienteeringPro  OrienteeringProblem   [.] <OrienteeringProblem::problem::Problem>::eval_route
+  [31m  10.36%[m  OrienteeringPro  OrienteeringProblem   [.] <OrienteeringProblem::problem::metaheuristics::memetic::Memetic as OrienteeringProblem::problem::metaheuristics::Method>::run_all_ms_in_p
+  [31m  10.26%[m  OrienteeringPro  OrienteeringProblem   [.] OrienteeringProblem::problem::metaheuristics::memetic::crossing::rejoin
+  [31m   7.27%[m  OrienteeringPro  OrienteeringProblem   [.] <rand::distr::uniform::int::UniformInt<u32> as rand::distr::uniform::UniformSampler>::sample_single_inclusive::<rand::rngs::thread::ThreadRng, u32, u32>
+  [31m   5.63%[m  OrienteeringPro  OrienteeringProblem   [.] OrienteeringProblem::problem::metaheuristics::memetic::mutation::adaptative
+  [31m   5.38%[m  OrienteeringPro  libc.so.6             [.] malloc
+  [32m   4.86%[m  OrienteeringPro  OrienteeringProblem   [.] core::slice::sort::stable::quicksort::quicksort::<(alloc::vec::Vec<u8>, f32, OrienteeringProblem::problem::route::TourStatus), <[(alloc::vec::Vec<u8>, f32, OrienteeringProblem::problem::route::TourStatus)]>::sort_by<OrienteeringProblem::problem::metaheuristics::memetic::simple::{closure#1}>::{closure#0}>
+  [32m   4.48%[m  OrienteeringPro  libc.so.6             [.] cfree@GLIBC_2.2.5
+  [32m   3.96%[m  OrienteeringPro  libc.so.6             [.] __memmove_avx_unaligned_erms
+  [32m   3.21%[m  OrienteeringPro  OrienteeringProblem   [.] OrienteeringProblem::problem::metaheuristics::memetic::local_search::two_opt
+  [32m   3.07%[m  OrienteeringPro  OrienteeringProblem   [.] OrienteeringProblem::problem::metaheuristics::memetic::local_search::insert
+  [32m   1.65%[m  OrienteeringPro  OrienteeringProblem   [.] chacha20::backends::avx2::rng_inner::<chacha20::R12, chacha20::variants::Legacy>
+  [32m   1.61%[m  OrienteeringPro  OrienteeringProblem   [.] __rustc::__rdl_dealloc
+  [32m   1.50%[m  OrienteeringPro  OrienteeringProblem   [.] <fixedbitset::FixedBitSet>::with_capacity
+  [32m   1.48%[m  OrienteeringPro  OrienteeringProblem   [.] OrienteeringProblem::problem::metaheuristics::memetic::simple::{closure#0}
+  [32m   1.10%[m  OrienteeringPro  OrienteeringProblem   [.] OrienteeringProblem::problem::metaheuristics::memetic::update_visited
+  [32m   1.05%[m  OrienteeringPro  OrienteeringProblem   [.] __rustc::__rust_no_alloc_shim_is_unstable_v2
+  [32m   1.04%[m  OrienteeringPro  OrienteeringProblem   [.] __powisf2
+
+
+#
+# (Tip: Show user configuration overrides: perf config --user --list)
+#

@@ -21,7 +21,7 @@ pub struct ACO {
     // taff : Grid<f32>,
 
     local_search: Box<dyn Fn(Vec<u8>, &mut u64, u64) -> (Vec<u8>, TourStatus)>,
-    rho  : f32,
+    rho  : f32, // use 1 - rho acctyually, please.
     Q    : f32,
     t0   : f32,
     num_ants: u32,
@@ -93,8 +93,10 @@ impl ACO {
                     }
             }
 
-            evaporation(&mut taff, self.rho);
-            reinforcement(&mut taff, &best_tour, best_score, self.Q);
+            evaporation(&mut taff, p.len, self.rho);
+            if !best_tour.is_empty() {
+                reinforcement(&mut taff, &best_tour, best_score as f32, self.Q);
+            }
         }
 
         best_tour
@@ -123,12 +125,34 @@ fn raffle_roulette(
 
 fn evaporation(
     taff: &mut Grid<f32>,
+    p_len: usize,
     rho: f32
-) {}
+) {
+    for i in 0..p_len {
+        for j in 0..p_len {
+            taff[(i, j)] *= rho;
+        }
+    }
+}
 
 fn reinforcement (
     taff: &mut Grid<f32>,
     tour: &[u8],
-    score: u32,
+    score: f32,
     Q: f32
-) {}
+) {
+    let deposit = Q * score;
+    let mut from = 0usize; 
+    let mut to   = tour[0] as usize; 
+    taff[(from, to)] += deposit;
+
+    for i in 0..tour.len() - 1 {
+        from = tour[i] as usize;
+        to  = tour[i+1] as usize;
+        taff[(from, to)] += deposit;
+    }
+
+    from = tour[tour.len() - 1] as usize; 
+    to   = 1usize; 
+    taff[(from, to)] += deposit;
+}

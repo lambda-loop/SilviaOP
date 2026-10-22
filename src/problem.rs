@@ -59,7 +59,7 @@ impl Problem {
         &self,
         used: &mut u64,
         budget: u64,
-        tour: &[u8]
+        tour: &[Point]
     ) -> Option<TourStatus> {
         if *used >= budget { return None };
         *used += 1;
@@ -72,7 +72,7 @@ impl Problem {
         )
     }
 
-    fn eval_route(&self, r: &[u8]) -> RouteStatus {
+    fn eval_route(&self, r: &[Point]) -> RouteStatus {
         if r.is_empty() {
             return RouteStatus {
                 total_consume: self.costs[(0, 1)],
@@ -103,15 +103,16 @@ impl Problem {
 
 //TODO: bitset when?
 use std::collections::HashSet as Set;
-pub fn greedy(problem: &Problem) -> Vec<u8> {
-    let mut visited = Set::<u8>::new();
-    let mut route = Vec::<u8>::new();
+pub fn greedy(problem: &Problem) -> Tour {
+    let p_len = problem.len;
+    let mut visited = Set::<Point>::new();
+    let mut tour = Tour::new(p_len);
 
     let mut current_p = 0usize;
     let mut current_cost = 0.0;
 
-    while let Some((p, new_cost)) = (2..problem.len)
-        .filter(|&p| !visited.contains(&(p as u8)))
+    while let Some((p, new_cost)) = (2..p_len)
+        .filter(|&p| !visited.contains(&(p as Point)))
         .map(|p| {
             let cost = current_cost + problem.costs[(current_p, p)] + problem.costs[(p, 1)];
 
@@ -123,11 +124,10 @@ pub fn greedy(problem: &Problem) -> Vec<u8> {
         current_cost = new_cost - problem.costs[(p, 1)];
         current_p = p;
 
-        route.push(p as u8);
-        visited.insert(p as u8);
+        tour.push(p as Point);
+        visited.insert(p as Point);
     }
 
-    route
+    tour
 }
 
-//
