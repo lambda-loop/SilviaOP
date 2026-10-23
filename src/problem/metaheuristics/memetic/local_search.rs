@@ -2,6 +2,8 @@
 use rand::*;
 use rand::rngs::ThreadRng;
 
+use crate::problem::Tour;
+
 use fixedbitset::FixedBitSet as BitSet;
 use crate::{
     OutOfCredits,
@@ -13,77 +15,23 @@ use crate::{
 
 pub type LocalSearcher =
     Box<dyn Fn(&mut LocalSearchCtx)
-               -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits>>;
+               -> Result<(), OutOfCredits>>;
+
 pub struct LocalSearchCtx<'a> {
     pub p            : &'a Problem          ,
-    pub tour         : Vec<u8>              ,
-    pub status       : TourStatus,
-    pub fit          : f32,
-    pub used         : &'a mut u64,
-    pub budget       : u64,
+    pub tour         : &'a mut Tour         ,
+    pub status       : &'a TourStatus       ,
+    pub fit          : &'a f32              ,
+    pub used         : &'a mut u64          ,
+    pub budget       : u64                  ,
     pub neighborhood : usize, // amount of tours to generate
     pub rng          : &'a mut ThreadRng    ,
     pub fitness      : Box<dyn Fn(TourStatus) -> f32 + 'a>,
-    pub visited      : BitSet
+    // pub visited      : BitSet
 }
 
 // cria N e depois pega a mlr. Nao mantem a original!
 
-pub fn two_opt<'a>(
-    ctx: &mut LocalSearchCtx<'a>
-) -> Result<(Vec<u8>, TourStatus, f32), OutOfCredits> {
-    if *ctx.used >= ctx.budget { return Err(OutOfCredits) }
-    let n = ctx.tour.len();
-
-    if n < 2 || ctx.neighborhood == 0 {
-        return Ok((ctx.tour.clone(), ctx.status, ctx.fit));
-    }
-
-    // generates first tour
-    let (
-        mut best_tour,
-        mut best_status,
-        mut best_fitness,
-    ) = {
-        let i = ctx.rng.random_range(0..n-1);
-        let j = ctx.rng.random_range(i+1..n);
-        let mut tour = ctx.tour.clone();
-        tour[i..=j].reverse();
-
-        let Some(status) = ctx.p.eval_tour(
-            ctx.used,
-            ctx.budget,
-            &tour
-        ) else { return Err(OutOfCredits) };
-        let fitness = (ctx.fitness)(status);
-
-        (tour, status, fitness)
-    };
-
-    for _ in 1..ctx.neighborhood {
-        let i = ctx.rng.random_range(0..n-1);
-        let j = ctx.rng.random_range(i+1..n);
-
-        let mut tour = ctx.tour.clone();
-        tour[i..=j].reverse();
-
-        let Some(status) = ctx.p.eval_tour(
-            ctx.used,
-            ctx.budget,
-            &tour
-        ) else {
-            return Ok((best_tour, best_status, best_fitness))
-        };
-        let fitness = (ctx.fitness)(status);
-        if fitness > best_fitness {
-            best_tour = tour;
-            best_status = status;
-            best_fitness = fitness;
-        }
-    }
-
-    Ok((best_tour, best_status, best_fitness))
-}
 
 pub fn insert<'a>(
     mut ctx: &mut LocalSearchCtx<'a>

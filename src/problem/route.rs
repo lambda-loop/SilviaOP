@@ -20,9 +20,10 @@ pub struct Tour {
 impl Tour {
     // excluding 0 and 1
     pub fn new(n_points: usize) -> Self {
-        if n_points >= Point::MAX as usize {
-            panic!("handling more points then possible currently!")
-        }
+        assert!((2..=usize::from(Point::MAX) + 1).contains(&n_points));
+        // if n_points >= Point::MAX as usize {
+        //     panic!("handling more points then possible currently!")
+        // }
         let buffer = unsafe {
             Box::<[Point]>::new_zeroed_slice(n_points - 2).assume_init()
         };
@@ -34,6 +35,11 @@ impl Tour {
             buffer, visited, 
             len: 0,
         }
+    }
+
+    #[inline(always)]
+    pub fn len(&self) -> u16 {
+        self.len
     }
 
     pub fn push(&mut self, point: Point) {
@@ -50,6 +56,24 @@ impl Tour {
 
     pub fn as_slice(&self) -> &[Point] {
         &self.buffer[0..self.len as usize]
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+
+    // u kinda "clone" something but OVER another instance
+    pub fn over(&self, under: &mut Self) {}
+
+    // changes based in the "over" slice
+    pub fn under(&mut self, over: &[Point]) {}
+
+    // it will be workst than a personalized version
+    // but will work for save allocations
+    pub fn reset(&mut self) {
+        self.len = 0;
+        self.visited.clear();
+        self.visited.insert_range(0..2);
     }
 
 }
@@ -69,6 +93,12 @@ impl std::ops::Deref for Tour {
 
     fn deref(&self) -> &[Point] {
         &self.buffer[..self.len as usize]
+    }
+}
+
+impl std::ops::DerefMut for Tour {
+    fn deref_mut(&mut self) -> &mut [Point] {
+        &mut self.buffer[..self.len as usize]
     }
 }
 

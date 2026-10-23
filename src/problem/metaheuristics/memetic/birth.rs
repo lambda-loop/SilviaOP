@@ -1,5 +1,8 @@
 
 use std::thread::Thread;
+use crate::problem::{
+    Tour, Point,
+};
 
 use rand::{
     *, rngs::ThreadRng, // seq::SliceRandomg,
@@ -10,28 +13,28 @@ pub type Birth = Box<dyn Fn(usize, usize, &mut ThreadRng) -> Vec<Vec<u8>>>;
 
 use fixedbitset::FixedBitSet as BitSet;
 
-pub fn simple(
-    p_len: usize,
-    size: usize,
-    rng: &mut ThreadRng,
-) -> Vec<Vec<u8>> {
-    assert_eq!(size % 2, 0);
+// pub fn simple(
+//     p_len: usize,
+//     size: usize,
+//     rng: &mut ThreadRng,
+// ) -> Vec<Tour> {
+//     assert_eq!(size % 2, 0);
 
-    let mut r#gen = Vec::with_capacity(size);
-    for _ in 0..size/2 {
-        let (a, b) = birth(p_len, rng);
-        r#gen.push(a);
-        r#gen.push(b);
+//     let mut r#gen = Vec::with_capacity(size);
+//     for _ in 0..size/2 {
+//         let (a, b) = birth(p_len, rng);
+//         r#gen.push(a);
+//         r#gen.push(b);
         
-    }
+//     }
 
-    r#gen
-}
+//     r#gen
+// }
 
 fn birth (
     p_len: usize,
     rng: &mut ThreadRng,
-) -> (Vec<u8>, Vec<u8>) {
+) -> (Tour, Tour) {
     let mut vs = BitSet::with_capacity(p_len);
 
     for _ in 0..p_len/2 {
@@ -39,14 +42,14 @@ fn birth (
         vs.insert(v)
     }
 
-    let mut l = Vec::with_capacity(p_len);
-    let mut r = Vec::with_capacity(p_len);
+    let mut l = Tour::new(p_len);
+    let mut r = Tour::new(p_len);
 
     for i in 2..p_len {
         if vs[i] {
-            l.push(i as u8);
+            l.push(i as Point);
         } else {
-            r.push(i as u8);
+            r.push(i as Point);
         }
     }
 

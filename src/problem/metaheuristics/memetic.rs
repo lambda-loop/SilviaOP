@@ -4,7 +4,7 @@ use rand::{
     *, rngs::ThreadRng,
 };
 
-mod local_search;
+// mod local_search;
 mod mutation;
 mod crossing;
 mod birth;
@@ -13,7 +13,7 @@ mod birth;
 use birth::*;
 use mutation::*;
 use crossing::*;
-use local_search::*;
+use crate::problem::local_search;
 use crossing::{
     MatchMaker, Mate,
 };
