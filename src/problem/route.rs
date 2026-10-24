@@ -76,6 +76,15 @@ impl Tour {
         self.visited.insert_range(0..2);
     }
 
+    pub fn reverse_in(
+        &mut self   ,
+        begin: usize,
+        end  : usize, 
+    ) {
+        self.buffer[begin..=end].reverse();
+        
+    }
+
 }
 
 /* so "
@@ -96,11 +105,6 @@ impl std::ops::Deref for Tour {
     }
 }
 
-impl std::ops::DerefMut for Tour {
-    fn deref_mut(&mut self) -> &mut [Point] {
-        &mut self.buffer[..self.len as usize]
-    }
-}
 
 
 #[derive(Debug, Clone, Copy)]
