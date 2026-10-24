@@ -40,7 +40,7 @@ pub fn two_opt_until (
 
         if new_cost < best_cost {
             best_cost = new_cost;
-            ctx.tour[begin as usize..=end as usize].reverse();
+            ctx.tour.reverse_in(begin as usize, end as usize);
         }
 
     }
