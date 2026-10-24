@@ -1,7 +1,7 @@
 //
 
 pub mod oplib;
-pub mod heuristic;
+// pub mod heuristic;
 pub mod local_search;
 mod matrix;
 pub mod metaheuristics;
@@ -16,9 +16,9 @@ use route::*;
 
 #[derive(Debug)]
 pub struct Problem {
-    pub tmax: f32,
-    pub costs: SquareMatrix<f32>,
-    pub scores: Vec<u32>,
+    pub tmax: f64,
+    pub costs: SquareMatrix<f64>,
+    pub scores: Vec<u16>,
     pub len: usize, // num_points
 }
 
@@ -28,7 +28,7 @@ impl Problem {
         let mut lines = raw_input.lines();
         let mut fst_line = lines.next().unwrap().trim().split_whitespace();
 
-        let tmax: f32 = fst_line.next().unwrap().parse().unwrap();
+        let tmax: f64 = fst_line.next().unwrap().parse().unwrap();
 
         let mut points = Vec::new();
         for line in lines {
@@ -37,9 +37,9 @@ impl Problem {
         }
 
         let len = points.len();
-        let scores = points.iter().map(|p| p.score).collect();
+        let scores = points.iter().map(|p| p.score as u16).collect();
 
-        let mut costs = SquareMatrix::<f32>::new(len);
+        let mut costs = SquareMatrix::<f64>::new(len);
 
         for i in 0..len {
             for j in 0..len {
@@ -79,7 +79,7 @@ impl Problem {
                 total_score: 0,
             };
         }        let r_len = r.len();
-        let mut total_score: u32 = r.iter().map(|&p| self.scores[p as usize]).sum();
+        let mut total_score: u16 = r.iter().map(|&p| self.scores[p as usize]).sum();
         let mut total_consume = 0.;
 
         total_consume += self.costs[(0, r[0] as usize)];
@@ -94,7 +94,7 @@ impl Problem {
 
         // unsafe {  EVALS += 1; };
         RouteStatus {
-            total_score,
+            total_score: total_score as u32,
             total_consume,
         }
 

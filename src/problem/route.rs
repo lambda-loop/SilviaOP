@@ -105,12 +105,12 @@ impl std::ops::DerefMut for Tour {
 
 #[derive(Debug, Clone, Copy)]
 pub struct TourStatus {
-    pub cost: f32,
+    pub cost: f64,
     pub score: u32,
 }
 
 #[derive(Debug, Clone)]
 pub struct RouteStatus {
     pub total_score: u32,
-    pub total_consume: f32,
+    pub total_consume: f64,
 }

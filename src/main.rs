@@ -11,16 +11,6 @@ use macroquad::prelude::Conf;
 mod problem;
 mod rendering;
 
-use problem::heuristic;
-use problem::heuristic::strategy::{
-    marginal_lazy,
-    marginal_envy,
-    marginal_smart,
-    total_envy,
-    total_smart,
-    Selector,
-};
-use problem::heuristic::ExperimentSpec;
 use problem::Problem;
 
 // use problem::metaheuristics::grasp;
@@ -29,16 +19,7 @@ use metaheuristics::*;
 
 use metaheuristics::experiment::Conclusion;
 
-struct Pet<const N: usize> {
-    buffer: [u8;N],
-    len: u8,
-}
-
-const FILE_NAME: &'static str = "set_64_1_65.txt";
 pub fn main() {
-
-    let x = 1024;
-    let buffer = Box<[u8, 1024]>;
     // let x = 3;
     // let p0 = &raw const x;
 
@@ -53,8 +34,8 @@ pub fn main() {
     let header = &Conclusion::header();
     print!("{header}");
     let ps = all_problems();
-    memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
-    println!("acabou-simples!");
+    // memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
+    // println!("acabou-simples!");
     // let ps = oplib_problems();
     // memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
     // println!("acabou-tudo!");

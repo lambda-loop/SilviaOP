@@ -1,6 +1,7 @@
 //
 
 pub mod two_opt;
+// pub mod insert;
 
 use rand::{
     rngs::ThreadRng,
@@ -21,11 +22,12 @@ pub type LocalSearcher =
 pub struct LocalSearchCtx<'a> {
     pub p            : &'a Problem          ,
     pub tour         : &'a mut Tour         ,
-    pub status       : &'a TourStatus       ,
+    pub score        : u64                  ,
+    pub cost         : f64                  ,
     pub fit          : &'a f32              ,
     pub used         : &'a mut u64          ,
     pub budget       : u64                  ,
-    pub neighborhood : usize, // amount of tours to generate
+    pub iters: usize, // amount of tours to generate
     pub rng          : &'a mut ThreadRng    ,
     pub fitness      : Box<dyn Fn(TourStatus) -> f32 + 'a>,
     // pub visited      : BitSet

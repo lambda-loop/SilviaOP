@@ -1,11 +1,12 @@
 //
 
 use crate::problem::Problem;
+use crate::problem::route::Tour;
 
 // Represents a bunch of experiments for a single prblem using a single method!
 #[derive(Debug, Clone)]
 pub struct Result {
-    pub tour: Vec<u8>,
+    pub tour: Tour,
     pub time: std::time::Duration,
     pub iters: u64,
 }
@@ -14,23 +15,23 @@ pub struct Result {
 pub struct Conclusion {
     pub problem_name   : String,
     pub problem_size   : usize,
-    pub problem_budget : f32,
+    pub problem_budget : f64,
 
     pub method_name    : String,
 
-    pub worst_score : f32,
-    pub best_score  : f32,
+    pub worst_score        : f64,
+    pub best_score         : f64,
 
-    pub mean_score  : f32,
-    pub median_score      : f32,
-    pub score_variance    : f32,
-    pub standard_deviation : f32,
+    pub mean_score         : f64,
+    pub median_score       : f64,
+    pub score_variance     : f64,
+    pub standard_deviation : f64,
 
-    pub worst_tour: Vec<u8>,
-    pub best_tour : Vec<u8>,
+    pub worst_tour: Tour,
+    pub best_tour : Tour,
 
     // in millis 
-    pub mean_time: f32,
+    pub mean_time : f64,
     pub mean_iters: f64,
 
     pub num_shots: usize,
@@ -51,7 +52,7 @@ impl Conclusion {
     ) -> Self {
         let mut rs: Vec<_> = rs.into_iter().map(|r| {
             let r_score = p.eval_route(&r.tour).total_score;
-            (r, r_score as f32)
+            (r, r_score as f64)
         }).collect();
 
         rs.sort_unstable_by(|(_, l), (_, r)| l.total_cmp(r));
@@ -61,12 +62,12 @@ impl Conclusion {
         let (total_score, total_time) = rs.iter().fold(
             (0., 0.),
             |(acc_score, acc_time), (r, score)|
-            (acc_score as f32 + score, r.time.as_secs_f32() * 1000.0 + acc_time)
+            (acc_score as f64 + score, r.time.as_secs_f64() * 1000.0 + acc_time)
         );
 
         let (mean_score, mean_time) = (
-            total_score / rs.len() as f32,
-            total_time  / rs.len() as f32,
+            total_score / rs.len() as f64,
+            total_time  / rs.len() as f64,
         );
 
         let median_score = if rs.len() % 2 == 0 {
@@ -81,8 +82,8 @@ impl Conclusion {
                 let diff = score - mean_score;
                 diff * diff
             })
-            .sum::<f32>()
-            / rs.len() as f32;
+            .sum::<f64>()
+            / rs.len() as f64;
         
         let standard_deviation = score_variance.sqrt();
         let (best_tour, worst_tour) = (best_r.tour.clone(), worst_r.tour);

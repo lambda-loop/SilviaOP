@@ -364,21 +364,21 @@ pub fn parse(content: &str) -> Problem {
      * START and END get score 0.
      */
     let mut internal_scores =
-        vec![0u32; len];
+        vec![0u16; len];
 
     for internal in 2..len {
         let original =
             node_map[internal];
 
         internal_scores[internal] =
-            scores[original];
+            scores[original] as u16;
     }
 
     /*
      * Costs in the internal representation.
      */
     let mut costs =
-        SquareMatrix::<f32>::new(len);
+        SquareMatrix::<f64>::new(len);
 
     for i in 0..len {
         for j in 0..len {
@@ -389,12 +389,12 @@ pub fn parse(content: &str) -> Problem {
                 node_map[j];
 
             costs[(i, j)] =
-                original_costs[original_i][original_j] as f32;
+                original_costs[original_i][original_j] as f64;
         }
     }
 
     Problem {
-        tmax: cost_limit as f32,
+        tmax: cost_limit as f64,
         costs,
         scores: internal_scores,
         len,
