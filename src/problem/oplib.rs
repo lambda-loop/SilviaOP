@@ -443,14 +443,13 @@ fn build_coordinate_matrix(
 
     for i in 0..n {
         for j in 0..n {
-            costs[i][j] =
-                distance(
-                    &points[i],
-                    &points[j],
-                );
+            costs[i][j] = if i == j {
+                0.0
+            } else {
+                distance(&points[i], &points[j])
+            };
         }
     }
-
     costs
 }
 
