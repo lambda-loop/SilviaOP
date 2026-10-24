@@ -55,6 +55,7 @@ impl Problem {
         }
     }
 
+    // just assumes thats everything ok with the tour.
     pub fn eval_tour(
         &self,
         used: &mut u64,

@@ -81,8 +81,8 @@ impl Tour {
         begin: usize,
         end  : usize, 
     ) {
+        assert!(begin <= end && end < usize::from(self.len));
         self.buffer[begin..=end].reverse();
-        
     }
 
 }
