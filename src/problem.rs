@@ -79,7 +79,11 @@ impl Problem {
                 total_score: 0,
             };
         }        let r_len = r.len();
-        let mut total_score: u16 = r.iter().map(|&p| self.scores[p as usize]).sum();
+        let mut total_score: u32 = r
+            .iter()
+            .map(|&p| self.scores[p as usize] as u32)
+            .sum();
+
         let mut total_consume = 0.;
 
         total_consume += self.costs[(0, r[0] as usize)];
