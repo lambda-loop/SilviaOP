@@ -2,7 +2,6 @@
 
 mod op_lib;
 mod classical_lib;
-mod pos;
 pub mod tour;
 // pub mod route;
 
@@ -50,7 +49,7 @@ impl Problem {
         )
     }
 
-    fn eval_route(&self, r: &[Point]) -> RouteStatus {
+    pub fn eval_route(&self, r: &[Point]) -> RouteStatus {
         if r.is_empty() {
             return RouteStatus {
                 total_consume: self.costs[(0, 1)],

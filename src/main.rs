@@ -15,6 +15,7 @@ mod rendering;
 mod experiment;
 
 use problem::Problem;
+use experiment::*;
 
 // use problem::metaheuristics::grasp;
 pub fn main() {

@@ -33,7 +33,7 @@ pub fn parse(raw_input: &str) -> Problem {
 
     let mut points = Vec::new();
     for line in lines {
-        let point = Pos2D::parse(line);
+        let point = Node::parse(line);
         points.push(point);
     }
 
