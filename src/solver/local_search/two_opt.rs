@@ -6,7 +6,7 @@ use rand::{
 
 use grid::Grid;
 use crate::{
-    OutOfCredits,
+    problem::OutOfCredits,
     problem::{Point},
 };
 

@@ -1,60 +1,35 @@
 //
 
-pub mod oplib;
-// pub mod heuristic;
-pub mod local_search;
-// mod matrix;
-pub mod metaheuristics;
+mod op_lib;
+mod classical_lib;
 mod pos;
 pub mod tour;
 // pub mod route;
 
 // use matrix::SquareMatrix;
 use grid::Grid;
-use pos::Node as Pos2D;
-use tour::*;
+pub use tour::*;
 
 // pub static mut EVALS: usize = 0;
 
 #[derive(Debug)]
 pub struct Problem {
-    pub tmax: f64,
-    pub costs: Grid<f64>,
-    pub scores: Vec<u16>,
-    pub len: usize, // num_points
+    pub tmax  : f64      ,
+    pub costs : Grid<f64>,
+    pub scores: Vec<u16> ,
+    pub len   : usize    , // num_points
 }
 
 impl Problem {
-    pub fn new(raw_input: &str) -> Self {
-        //
-        let mut lines = raw_input.lines();
-        let mut fst_line = lines.next().unwrap().trim().split_whitespace();
 
-        let tmax: f64 = fst_line.next().unwrap().parse().unwrap();
+    // classical
+    pub fn from_classical(input: &str) -> Self {
+        classical_lib::parse(input)
+    }
 
-        let mut points = Vec::new();
-        for line in lines {
-            let point = Pos2D::parse(line);
-            points.push(point);
-        }
-
-        let len = points.len();
-        let scores = points.iter().map(|p| p.score as u16).collect();
-
-        let mut costs = Grid::<f64>::new(len, len);
-
-        for i in 0..len {
-            for j in 0..len {
-                costs[(i, j)] = points[i].euc_dist(&points[j]);
-            }
-        }
-
-        Problem {
-            tmax,
-            costs,
-            scores,
-            len,
-        }
+    // op lib
+    pub fn from_op(input: &str) -> Self {
+        op_lib::parse(input)
     }
 
     // just assumes thats everything ok with the tour.
@@ -138,3 +113,4 @@ pub fn greedy(problem: &Problem) -> Tour {
     tour
 }
 
+pub struct OutOfCredits;

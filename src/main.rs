@@ -8,18 +8,15 @@ use std::path::{Path, PathBuf};
 
 use macroquad::prelude::Conf;
 
+mod config;
 mod solver;
 mod problem;
 mod rendering;
+mod experiment;
 
 use problem::Problem;
 
 // use problem::metaheuristics::grasp;
-use problem::metaheuristics;
-use metaheuristics::*;
-
-use metaheuristics::experiment::Conclusion;
-
 pub fn main() {
     // let x = 3;
     // let p0 = &raw const x;
@@ -43,7 +40,6 @@ pub fn main() {
 
 }
 
-use problem::oplib;
 fn oplib_problems() -> Vec<(Problem, String)> {
     let dir = fs::read_dir("OPLib").unwrap();
     let mut inputs = Vec::new();
@@ -56,7 +52,7 @@ fn oplib_problems() -> Vec<(Problem, String)> {
                 if file_name.ends_with(".oplib") {
                     let content = fs::read_to_string(entry.path()).unwrap();
                     inputs.push((
-                        oplib::parse(&content),
+                        Problem::from_op(&content),
                         file_name.to_string(),
                     ))
                 }
@@ -84,7 +80,7 @@ pub fn all_problems() -> Vec<(Problem, String)> {
                 if file_name.ends_with(".txt") {
                     let content = fs::read_to_string(entry.path()).unwrap();
                     inputs.push((
-                        Problem::new(&content),
+                        Problem::from_classical(&content),
                         file_name.to_string(),
                     ))
                 }
