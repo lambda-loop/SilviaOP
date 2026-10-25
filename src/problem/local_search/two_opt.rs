@@ -3,10 +3,11 @@ use rand::{
     Rng, *,
 };
 
-use crate::problem::matrix::SquareMatrix;
+
+use grid::Grid;
 use crate::{
     OutOfCredits,
-    problem::{Point, route::TourStatus},
+    problem::{Point},
 };
 
 use super::LocalSearchCtx;
@@ -51,7 +52,7 @@ pub fn two_opt_until (
 
 fn eval_two_opted_cost(
     tour : &[Point],
-    costs: &SquareMatrix<f64>,
+    costs: &Grid<f64>,
     begin: usize,
     end  : usize,
 ) -> f64 {

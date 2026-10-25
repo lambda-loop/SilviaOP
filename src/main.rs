@@ -8,6 +8,7 @@ use std::path::{Path, PathBuf};
 
 use macroquad::prelude::Conf;
 
+mod solver;
 mod problem;
 mod rendering;
 

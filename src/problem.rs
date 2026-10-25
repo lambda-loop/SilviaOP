@@ -3,21 +3,23 @@
 pub mod oplib;
 // pub mod heuristic;
 pub mod local_search;
-mod matrix;
+// mod matrix;
 pub mod metaheuristics;
 mod pos;
-pub mod route;
+pub mod tour;
+// pub mod route;
 
-use matrix::SquareMatrix;
+// use matrix::SquareMatrix;
+use grid::Grid;
 use pos::Node as Pos2D;
-use route::*;
+use tour::*;
 
 // pub static mut EVALS: usize = 0;
 
 #[derive(Debug)]
 pub struct Problem {
     pub tmax: f64,
-    pub costs: SquareMatrix<f64>,
+    pub costs: Grid<f64>,
     pub scores: Vec<u16>,
     pub len: usize, // num_points
 }
@@ -39,7 +41,7 @@ impl Problem {
         let len = points.len();
         let scores = points.iter().map(|p| p.score as u16).collect();
 
-        let mut costs = SquareMatrix::<f64>::new(len);
+        let mut costs = Grid::<f64>::new(len, len);
 
         for i in 0..len {
             for j in 0..len {

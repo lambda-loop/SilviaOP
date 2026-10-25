@@ -1,16 +1,13 @@
 //
 
 pub mod two_opt;
-// pub mod insert;
-
-use rand::{
-    rngs::ThreadRng,
+pub use rand::{
+    rngs::SmallRng,
 };
 
 use crate::{
     OutOfCredits, problem::{
-        Problem,
-        route::*,
+        Problem, TourStatus, Tour,
     }
 };
 
@@ -28,7 +25,7 @@ pub struct LocalSearchCtx<'a> {
     pub used         : &'a mut u64          ,
     pub budget       : u64                  ,
     pub iters: usize, // amount of tours to generate
-    pub rng          : &'a mut ThreadRng    ,
+    pub rng          : &'a mut SmallRng,
     pub fitness      : Box<dyn Fn(TourStatus) -> f32 + 'a>,
     // pub visited      : BitSet
 }

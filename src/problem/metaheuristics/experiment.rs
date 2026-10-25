@@ -1,7 +1,7 @@
 //
 
 use crate::problem::Problem;
-use crate::problem::route::Tour;
+use crate::problem::Tour;
 
 // Represents a bunch of experiments for a single prblem using a single method!
 #[derive(Debug, Clone)]

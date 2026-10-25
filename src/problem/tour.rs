@@ -1,6 +1,15 @@
-//
 
 use fixedbitset::FixedBitSet as BitSet;
+
+/* so "
+
+let mut tour = Tour::new(100);
+tour.push(5);
+tour.push(9);
+
+evaluate(&tour); // prints [5, 9]
+
+" works */
 
 // general usage
 pub type Point = u16;
@@ -87,16 +96,6 @@ impl Tour {
 
 }
 
-/* so "
-
-let mut tour = Tour::new(100);
-tour.push(5);
-tour.push(9);
-
-evaluate(&tour); // imprime [5, 9]
-
-" works */
-
 impl std::ops::Deref for Tour {
     type Target = [Point];
 
@@ -104,8 +103,6 @@ impl std::ops::Deref for Tour {
         &self.buffer[..self.len as usize]
     }
 }
-
-
 
 #[derive(Debug, Clone, Copy)]
 pub struct TourStatus {

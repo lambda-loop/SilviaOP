@@ -378,7 +378,7 @@ pub fn parse(content: &str) -> Problem {
      * Costs in the internal representation.
      */
     let mut costs =
-        SquareMatrix::<f64>::new(len);
+        Grid::<f64>::new(len, len);
 
     for i in 0..len {
         for j in 0..len {
