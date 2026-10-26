@@ -32,7 +32,7 @@ async fn main() {
 
     thread::spawn(move || oplib_problems(sx));
 
-    for _ in 0..250 {
+    for _ in 0..350 {
         rx.recv();
     }
 

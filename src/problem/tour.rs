@@ -94,6 +94,10 @@ impl Tour {
         self.buffer[begin..=end].reverse();
     }
 
+    pub fn avaiable<'a> (&'a self) -> fixedbitset::Zeroes<'a> {
+        self.visited.zeroes()
+    }
+
 }
 
 impl std::ops::Deref for Tour {
