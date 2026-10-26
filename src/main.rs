@@ -7,7 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use std::sync::{
-    mpsc::{self, Receiver, Sender}
+    mpsc::{self, Receiver, SyncSender}
 };
 use std::thread;
 use macroquad::prelude::Conf;
@@ -24,47 +24,49 @@ use problem::{
 use rendering::renderer::*;
 use experiment::*;
 
-// use problem::metaheuristics::grasp;
-pub fn main() {
-    // let x = 3;
-    // let p0 = &raw const x;
+#[macroquad::main(window_conf)]
+async fn main() {
+    let (sx, rx) = mpsc::sync_channel(10);
 
-    // const x = 3;
-    // const p0 = &x;
+    print!("{}", Conclusion::header());
 
-
-    // var x = 3;
-    // const p0 = &x;
-
-    let (sx, rx) = mpsc::channel();
-
-    let header = &Conclusion::header();
-    print!("{header}");
-    // let ps = all_problems();
-    // memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
-    // println!("acabou-simples!");
     thread::spawn(move || oplib_problems(sx));
-    let (content, name) = rx.recv().unwrap();
+
+    for _ in 0..250 {
+        rx.recv();
+    }
+
+    let (content, name) = rx
+        .recv()
+        .expect("Nenhum arquivo .oplib recebido");
+
     let map = Map::from_op(
         &content,
         Tour::new(100),
-        0., 
-        name, 
+        0.0,
+        name,
         0,
     );
 
     let renderer = Renderer::new(map);
-    renderer.draw();
 
-    // println!("{}", ps[0]);
-    // memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
-    // println!("acabou-tudo!");
+    loop {
+        if is_key_pressed(KeyCode::Q) {
+            break;
+        }
 
+        clear_background(BLACK);
+        renderer.draw();
+
+        next_frame().await;
+    }
 }
 
-fn oplib_problems(sx: Sender<(String, String)>) {
-    let dir = fs::read_dir("OPLib").unwrap();
-    // let mut inputs = Vec::new();
+fn oplib_problems(sx: SyncSender<(String, String)>) {
+    let dir = fs::read_dir("OPLib").unwrap(); // let mut inputs = Vec::new();
+    let count = dir.count();
+    let dir = fs::read_dir("OPLib").unwrap(); 
+    println!("dir count: {}", count);
     for file in dir {
         let entry = file.unwrap();
         match entry.file_type() {
@@ -127,3 +129,7 @@ pub fn window_conf() -> Conf {
         ..Default::default()
     }
 }
+
+use macroquad::prelude::{
+    clear_background, is_key_pressed, next_frame, KeyCode, BLACK,
+};

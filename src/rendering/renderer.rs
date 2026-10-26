@@ -71,7 +71,7 @@ impl Renderer {
         let map = &self.map;
 
         self.draw_points(map);
-        self.draw_route(map);
+        self.draw_tour(map);
         self.draw_route_points(map);
         self.draw_info(map);
     }
@@ -93,16 +93,16 @@ impl Renderer {
         }
     }
 
-    fn draw_route(&self, map: &Map) {
-        if map.route.is_empty() {
+    fn draw_tour(&self, map: &Map) {
+        if map.tour.is_empty() {
             return;
         }
 
-        let mut full_route = Vec::with_capacity(map.route.len() + 2);
+        let mut full_route = Vec::with_capacity(map.tour.len() as usize + 2);
 
         // TODO: change this shit!!
         full_route.push(0);
-        full_route.extend_from_slice(&map.route);
+        full_route.extend_from_slice(&map.tour);
         full_route.push(1);
         // WHY REALLY COPY IT!!??
 
@@ -119,7 +119,7 @@ impl Renderer {
     }
 
     fn draw_route_points(&self, map: &Map) {
-        for &idx in &map.route {
+        for &idx in map.tour.as_slice() {
             let p = &map.points[idx as usize];
             let (x, y) = self.view.to_screen(p.x, p.y);
 
@@ -147,7 +147,7 @@ impl Renderer {
         let title_x = (screen_width() - title_dims.width) / 2.0;
 
         draw_text(&map.title, title_x, 30.0, font_size, WHITE);
-        let score_text = format!("Score: {}", map.route_score);
+        let score_text = format!("Score: {}", map.score);
 
         draw_text(&score_text, 20.0, screen_height() - 50.0, 20.0, WHITE);
         let cost_text = format!("{:.2} / {:.2}", map.used_cost, map.tmax);
