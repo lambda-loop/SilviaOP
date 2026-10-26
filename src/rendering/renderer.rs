@@ -3,15 +3,55 @@
 use super::point::*;
 use super::view::*;
 
+use crate::problem::{
+    Tour, Problem,
+};
+
 #[derive(Debug, Clone)]
 pub struct Map {
-    pub route: Vec<u8>,
-    pub points: Vec<Point>,
-    pub tmax: f32,
-    pub used_cost: f32,
-    pub title: String,
-    pub route_score: u32,
+    pub tour       : Tour      ,
+    pub points     : Vec<Point>,
+    pub tmax       : f64       ,
+    pub used_cost  : f64       ,
+    pub title      : String    ,
+    pub score      : u64       ,
     // additional info
+}
+
+impl Map {
+    pub fn from_classical (
+        raw_input: &str  ,
+        tour     : Tour  ,
+        used_cost: f64   ,
+        title    : String,
+        score    : u64   ,
+
+    ) -> Self {
+       let points = Point::parse_classical_coords(raw_input);
+       let p      = Problem::from_classical(raw_input);
+
+        Map {
+            tour, points, tmax: p.tmax,
+            used_cost, title, score,
+        }
+    }
+
+    pub fn from_op (
+        raw_input: &str  ,
+        tour     : Tour  ,
+        used_cost: f64   ,
+        title    : String,
+        score    : u64   ,
+
+    ) -> Self {
+       let points = Point::parse_oplib_coords(raw_input);
+       let p      = Problem::from_op(raw_input);
+
+        Map {
+            tour, points, tmax: p.tmax,
+            used_cost, title, score,
+        }
+    }
 }
 
 pub struct Renderer {

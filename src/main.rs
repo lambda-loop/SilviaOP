@@ -6,6 +6,10 @@ use std::collections::{
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use std::sync::{
+    mpsc::{self, Receiver, Sender}
+};
+use std::thread;
 use macroquad::prelude::Conf;
 
 mod config;
@@ -14,7 +18,10 @@ mod problem;
 mod rendering;
 mod experiment;
 
-use problem::Problem;
+use problem::{
+    Problem, Tour,
+};
+use rendering::renderer::*;
 use experiment::*;
 
 // use problem::metaheuristics::grasp;
@@ -29,21 +36,35 @@ pub fn main() {
     // var x = 3;
     // const p0 = &x;
 
+    let (sx, rx) = mpsc::channel();
 
     let header = &Conclusion::header();
     print!("{header}");
-    let ps = all_problems();
+    // let ps = all_problems();
     // memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
     // println!("acabou-simples!");
-    // let ps = oplib_problems();
+    thread::spawn(move || oplib_problems(sx));
+    let (content, name) = rx.recv().unwrap();
+    let map = Map::from_op(
+        &content,
+        Tour::new(100),
+        0., 
+        name, 
+        0,
+    );
+
+    let renderer = Renderer::new(map);
+    renderer.draw();
+
+    // println!("{}", ps[0]);
     // memetic::Memetic::run_all_ms_in_all_ps(ps, 30);
     // println!("acabou-tudo!");
 
 }
 
-fn oplib_problems() -> Vec<(Problem, String)> {
+fn oplib_problems(sx: Sender<(String, String)>) {
     let dir = fs::read_dir("OPLib").unwrap();
-    let mut inputs = Vec::new();
+    // let mut inputs = Vec::new();
     for file in dir {
         let entry = file.unwrap();
         match entry.file_type() {
@@ -52,10 +73,15 @@ fn oplib_problems() -> Vec<(Problem, String)> {
                 let file_name = file_name.to_string_lossy();
                 if file_name.ends_with(".oplib") {
                     let content = fs::read_to_string(entry.path()).unwrap();
-                    inputs.push((
-                        Problem::from_op(&content),
-                        file_name.to_string(),
-                    ))
+                    sx.send((
+                        content,
+                        // Problem::from_op(&content),
+                        String::from(file_name),
+                    ));
+                    // inputs.push((
+                    //     Problem::from_op(&content),
+                    //     file_name.to_string(),
+                    // ))
                 }
             },
             Err(_) => panic!(),
@@ -63,10 +89,6 @@ fn oplib_problems() -> Vec<(Problem, String)> {
         }
         
     }
-
-    inputs
-
-    
 }
 
 pub fn all_problems() -> Vec<(Problem, String)> {
