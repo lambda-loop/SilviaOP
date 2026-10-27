@@ -67,6 +67,10 @@ impl Tour {
         &self.buffer[0..self.len as usize]
     }
 
+    pub fn as_mut_slice(&mut self) -> &mut [Point] {
+        &mut self.buffer[0..self.len as usize]
+    }
+
     pub fn is_empty(&self) -> bool {
         self.len == 0
     }

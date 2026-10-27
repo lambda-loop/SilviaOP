@@ -18,12 +18,16 @@ mod problem;
 mod rendering;
 mod experiment;
 
+use rand::*;
+
 use problem::{
     Problem, Tour,
 };
+use rand::rngs;
 use rendering::renderer::*;
 use experiment::*;
 
+use solver::metaheuristics::tsp::ils;
 #[macroquad::main(window_conf)]
 async fn main() {
     let (sx, rx) = mpsc::sync_channel(10);
@@ -32,7 +36,7 @@ async fn main() {
 
     thread::spawn(move || oplib_problems(sx));
 
-    for _ in 0..350 {
+    for _ in 0..120 {
         rx.recv();
     }
 
@@ -40,19 +44,37 @@ async fn main() {
         .recv()
         .expect("Nenhum arquivo .oplib recebido");
 
-    let map = Map::from_op(
+    let problem = Problem::from_op(&content);
+    let mut tour = Tour::new(problem.len);
+
+    let mut t_rng = rand::rng();
+    for i in 0..problem.len {
+        if t_rng.random_bool(0.3) {
+            tour.push(i as u16);
+        }
+    }
+
+    let mut map = Map::from_op(
         &content,
-        Tour::new(100),
+        tour,
         0.0,
         name,
         0,
     );
+    let mut t_rng = rand::rng();
+    let mut rng = rngs::SmallRng::from_rng(&mut t_rng);
 
-    let renderer = Renderer::new(map);
+    let mut renderer = Renderer::new(map);
 
     loop {
         if is_key_pressed(KeyCode::Q) {
             break;
+        }
+
+        if is_key_pressed(KeyCode::I) {
+            ils::ils(&mut renderer.map.tour, &mut rng, &problem.costs, 1_000);
+            // renderer.map.tour
+            
         }
 
         clear_background(BLACK);

@@ -25,7 +25,7 @@ pub fn two_opt_until (
         return Ok(());
     }
 
-    let costs = &ctx.p.costs;
+    let costs         = &ctx.p.costs;
     let mut best_cost = ctx.cost;
 
     for _ in 0..iters {
