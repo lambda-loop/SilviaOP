@@ -98,6 +98,21 @@ impl Tour {
         self.buffer[begin..=end].reverse();
     }
 
+    #[inline(always)]
+    pub fn visited_block(&self) -> &[usize] {
+        self.visited.as_slice()
+    }
+
+    #[inline(always)]
+    pub fn visited_block_mut (&mut self) -> &mut [usize] {
+        self.visited.as_mut_slice()
+    }
+
+    #[inline(always)]
+    pub fn visited (&self) -> &BitSet {
+        &self.visited
+    }
+
     pub fn avaiable<'a> (&'a self) -> fixedbitset::Zeroes<'a> {
         self.visited.zeroes()
     }

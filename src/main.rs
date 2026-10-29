@@ -27,7 +27,9 @@ use rand::rngs;
 use rendering::renderer::*;
 use experiment::*;
 
-use solver::metaheuristics::tsp::ils;
+use solver::metaheuristics::tsp::{
+    ils, naive_greedy,
+};
 #[macroquad::main(window_conf)]
 async fn main() {
     let (sx, rx) = mpsc::sync_channel(10);
@@ -49,10 +51,12 @@ async fn main() {
 
     let mut t_rng = rand::rng();
     for i in 0..problem.len {
-        if t_rng.random_bool(0.3) {
+        if t_rng.random_bool(0.1) {
             tour.push(i as u16);
         }
     }
+
+
 
     let mut map = Map::from_op(
         &content,
@@ -72,7 +76,9 @@ async fn main() {
         }
 
         if is_key_pressed(KeyCode::I) {
-            ils::ils(&mut renderer.map.tour, &mut rng, &problem.costs, 1_000);
+            naive_greedy::heuristic(renderer.map.tour.as_mut_slice(), &problem.costs);
+            
+            ils::ils(&mut renderer.map.tour, &mut rng, &problem.costs, 100_000);
             // renderer.map.tour
             
         }
