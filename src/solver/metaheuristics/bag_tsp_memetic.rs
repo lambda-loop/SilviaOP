@@ -10,7 +10,9 @@ use rand::{
 };
 
 use crate::{
-    Problem, Tour, problem::Point,
+    Problem, Tour, problem::{
+        Point, TourStatus, 
+    },
 };
 
 type Genesis  = fn(problem_size: usize, pop_size: usize) -> Box<[Tour]>;
@@ -22,7 +24,7 @@ type Crossing = fn(
 );
 
 type Renovation = fn(&Box<Tour>, SmallRng);
-type Fitness    = fn(&Problem, &[Point]) -> f64;
+type Fitness    = fn(TourStatus) -> f64;
 type Assembly   = fn(
     &mut Tour, &mut SmallRng, 
     costs: &Grid<f64>,
@@ -38,7 +40,12 @@ type Mutation   = fn(
 ); 
 
 // intense
-type LocalSearch = fn() -> f64;
+type LocalSearch = fn(
+    tour   : &mut Tour,
+    used   : &mut u64,
+    budget : u64,
+    problem: &Problem,
+) -> TourStatus; // (fit, cost)
 
 pub struct MemeticBagTsp {
     problem   : Problem   ,
@@ -58,7 +65,9 @@ pub struct MemeticBagTsp {
 }
 
 impl MemeticBagTsp {
-    fn run(mut self) {
+    fn run (self) -> Tour {
+        let mut used = 0;
+        let budget = self.budget;
         let mut rng = self.rng;
         let p = &self.problem;
         let tmax = p.tmax;
@@ -74,24 +83,41 @@ impl MemeticBagTsp {
             pop_size
         ).into_iter()
          .map(|tour| {
-             let fit = (self.fitness) (p, tour.as_slice());
-             (tour, fit)
+             let ts = p.eval_tour(
+                 &mut used,
+                 budget,
+                 tour.as_slice()
+             ).expect(
+                 "credits were not enough for this tsp_memetic run!"
+             );
+
+             let fit = (self.fitness) (ts);
+             (tour, fit, ts)
          }).collect();
 
-        let mut used = BitSet::with_capacity(problem_len);
+        let mut occupied   = BitSet::with_capacity(problem_len);
+        let mut best_tour  = Tour::new(problem_len);
+        let mut best_score = 0;
 
-        // by max fit
-        loop {
-            pop.sort_by(|(_, l), (_, r)| r.total_cmp(l));
-            for (t, _) in &pop {
-                used.union_with(t.visited());
+        while used < budget {
+            // by max fit
+            pop.sort_by(|(_, l, _), (_, r, _)| r.total_cmp(l));
+            if let Some((tour, _, ts)) = extracts_best_feasible(
+                &pop, best_score, tmax,
+            ) && ts.score > best_score {
+                best_tour = tour.clone();
+                best_score = ts.score;
+            }
+
+            for (t, _, _) in &pop {
+                occupied.union_with(t.visited());
             }
 
             // avaiable.toggle_range(..);
             let (elite, others) = pop[..pop_size]
                 .split_at_mut(elite_size);
 
-            for (t, _) in others.iter_mut() {
+            for (t, f, ts) in others.iter_mut() {
                 let l = rng.random_range(0..elite_size);
                 let r = rng.random_range(0..elite_size);
 
@@ -101,24 +127,22 @@ impl MemeticBagTsp {
 
                 (self.crosser)(l, r, child, &mut rng);
                 t.fix();
-            }
 
-            for (t, f) in others.iter_mut() {
                 (self.assembler)(
                     t, &mut rng,
                     costs, aiters
                 );
 
-                *f = (self.fitness)(p, t.as_slice());
+                (self.mutator) (t, &mut rng, &occupied, costs, tmax);
+                *ts = (self.searcher) (t, &mut used, budget, p);
+                if used >= budget { return best_tour }
+                *f  = (self.fitness) (*ts);
             }
 
-            for (t, f) in pop.iter_mut() {
-                (self.mutator) (t, &mut rng, &used, costs, tmax);
-                *f = (self.searcher) ();
-            }
-
-            used.clear();
+            occupied.clear();
         }
+
+        best_tour
     }
 }
 
@@ -143,4 +167,25 @@ fn birth_two(
     problem_len: usize
 ) -> (Tour, Tour) {
     todo!()
+}
+
+// assumes its sorted
+fn extracts_best_feasible(
+    // tour, fit, coust
+    pop: &[(Tour, f64, TourStatus)],
+    best_score: u32, 
+    tmax: f64,
+) -> Option<&(Tour, f64, TourStatus)> {
+    let mut best_found = None;
+    let mut max_score  = best_score;
+
+    for p@(_, _, ts) in pop {
+        // short circuit when
+        if ts.cost <= tmax && ts.score > max_score {
+            max_score = ts.score;
+            best_found = Some(p);
+        }
+    }
+
+    best_found
 }

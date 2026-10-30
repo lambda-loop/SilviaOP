@@ -1,4 +1,5 @@
 
+use grid::Grid;
 use fixedbitset::FixedBitSet as BitSet;
 
 /* so "
@@ -120,6 +121,13 @@ impl Tour {
     // if only the visited matters and the visited was altered in a nom proper way.. Then we need to
     // create some tour (probably bad) that matches the visited list
     pub fn fix(&mut self) {}
+    pub fn cost(&self, costs: &Grid<f64>) -> f64 {
+        todo!()
+    }
+
+    pub fn score(&self, scores: &[u16]) -> u32 {
+        todo!()
+    }
 
 }
 
