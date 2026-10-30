@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use std::sync::{
     mpsc::{self, Receiver, SyncSender}
 };
+
 use std::thread;
 use macroquad::prelude::Conf;
 
@@ -161,3 +162,4 @@ pub fn window_conf() -> Conf {
 use macroquad::prelude::{
     clear_background, is_key_pressed, next_frame, KeyCode, BLACK,
 };
+

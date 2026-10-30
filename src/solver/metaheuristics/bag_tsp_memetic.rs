@@ -3,13 +3,14 @@ mod cross;
 
 use std::mem::MaybeUninit;
 use fixedbitset::FixedBitSet as BitSet;
+use grid::Grid;
 use rand::{
     *,
     rngs::SmallRng,
 };
 
 use crate::{
-    Problem, Tour,
+    Problem, Tour, problem::Point,
 };
 
 type Genesis  = fn(problem_size: usize, pop_size: usize) -> Box<[Tour]>;
@@ -21,7 +22,23 @@ type Crossing = fn(
 );
 
 type Renovation = fn(&Box<Tour>, SmallRng);
-type Fitness    = fn(&Problem, Tour) -> (Tour, f64); 
+type Fitness    = fn(&Problem, &[Point]) -> f64;
+type Assembly   = fn(
+    &mut Tour, &mut SmallRng, 
+    costs: &Grid<f64>,
+    max_iters: u64
+);
+
+type Mutation   = fn(
+    tour : &mut Tour,
+    rng  : &mut SmallRng,
+    used : &BitSet,
+    costs: &Grid<f64>,
+    tmax : f64,
+); 
+
+// intense
+type LocalSearch = fn() -> f64;
 
 pub struct MemeticBagTsp {
     problem   : Problem   ,
@@ -34,36 +51,47 @@ pub struct MemeticBagTsp {
     fitness   : Fitness   ,
     rng       : SmallRng  ,
     crosser   : Crossing  , 
+    assembler : Assembly  ,
+    assembler_iters : u64 ,
+    mutator   : Mutation  ,
+    searcher : LocalSearch, 
 }
 
 impl MemeticBagTsp {
     fn run(mut self) {
         let mut rng = self.rng;
         let p = &self.problem;
+        let tmax = p.tmax;
+        let costs = &p.costs;
         let problem_len = self.problem.len;
         let elite_size  = self.elite_size;
         let pop_size    = self.pop_size;
+
+        let aiters = self.assembler_iters;
 
         let mut pop: Box<_> = (self.genesis) (
             problem_len,
             pop_size
         ).into_iter()
-         .map(|tour| (self.fitness) (p, tour))
-         .collect();
+         .map(|tour| {
+             let fit = (self.fitness) (p, tour.as_slice());
+             (tour, fit)
+         }).collect();
 
-        let mut avaiable = BitSet::with_capacity(problem_len);
+        let mut used = BitSet::with_capacity(problem_len);
+
         // by max fit
         loop {
             pop.sort_by(|(_, l), (_, r)| r.total_cmp(l));
             for (t, _) in &pop {
-                avaiable.union_with(t.visited());
+                used.union_with(t.visited());
             }
 
-            avaiable.toggle_range(..);
+            // avaiable.toggle_range(..);
             let (elite, others) = pop[..pop_size]
                 .split_at_mut(elite_size);
 
-            for (t, _) in others {
+            for (t, _) in others.iter_mut() {
                 let l = rng.random_range(0..elite_size);
                 let r = rng.random_range(0..elite_size);
 
@@ -72,9 +100,24 @@ impl MemeticBagTsp {
                 let child = t.visited_block_mut();
 
                 (self.crosser)(l, r, child, &mut rng);
+                t.fix();
             }
 
-            avaiable.clear();
+            for (t, f) in others.iter_mut() {
+                (self.assembler)(
+                    t, &mut rng,
+                    costs, aiters
+                );
+
+                *f = (self.fitness)(p, t.as_slice());
+            }
+
+            for (t, f) in pop.iter_mut() {
+                (self.mutator) (t, &mut rng, &used, costs, tmax);
+                *f = (self.searcher) ();
+            }
+
+            used.clear();
         }
     }
 }

@@ -117,6 +117,10 @@ impl Tour {
         self.visited.zeroes()
     }
 
+    // if only the visited matters and the visited was altered in a nom proper way.. Then we need to
+    // create some tour (probably bad) that matches the visited list
+    pub fn fix(&mut self) {}
+
 }
 
 impl std::ops::Deref for Tour {
