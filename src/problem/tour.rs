@@ -52,6 +52,7 @@ impl Tour {
         self.len
     }
 
+    // Confia, nao vai dar problema! Nunca vai dar out of bounds!
     pub fn push(&mut self, point: Point) {
         // its a new point
         if !self.visited.put(point as usize) {
@@ -154,6 +155,16 @@ impl Tour {
         todo!()
     }
 
+    pub fn remove_idx(&mut self, i: usize) {
+        let len = self.len as usize;
+        assert!(i < len);
+        
+        let p = self.buffer[i];
+        
+        self.buffer.copy_within(i + 1..len, i);
+        self.visited.remove(p as usize);
+        self.len -= 1;
+    }
 }
 
 impl std::ops::Deref for Tour {

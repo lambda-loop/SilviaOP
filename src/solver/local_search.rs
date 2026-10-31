@@ -1,6 +1,7 @@
 //
 
 pub mod two_opt;
+pub mod strategy;
 pub use rand::{
     rngs::SmallRng,
 };

@@ -27,6 +27,11 @@ type Assembly   = fn(
     max_iters: u64
 );
 
+type TspLocalSearch = fn(
+    tour   : &mut Tour,
+    rng: &mut SmallRng,
+    costs: &Grid<f64>,
+);
 
 pub struct MemeticBagTsp {
     problem   : Problem   ,
@@ -39,6 +44,7 @@ pub struct MemeticBagTsp {
     rng       : SmallRng  ,
     crosser   : Crossing  , 
     assembler : Assembly  ,
+    tsp_solver: 
     assembler_iters : u64 ,
     mutator   : Mutation  ,
     searcher : LocalSearch, 
