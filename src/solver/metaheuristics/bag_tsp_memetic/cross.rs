@@ -8,6 +8,14 @@ use fixedbitset::{
     Block,
 };
 
+
+pub type Crossing = fn(
+    l    : &[usize], // the bytes 
+    r    : &[usize], // the byts
+    child: &mut [usize],
+    rng  : &mut SmallRng, 
+);
+
 pub fn bag_cross(
     l    : &[usize], // the bytes 
     r    : &[usize], // the byts
@@ -24,19 +32,3 @@ pub fn bag_cross(
     }
 }
     
-// fn gen_mask (
-//     mask: &mut [usize],
-//     rng : &mut SmallRng,
-// ) {
-//     let rem = mask.len() % Block::BITS as usize;
-//     let restantes = mask.len() % Block::BITS as usize;
-
-//     for block in mask.iter_mut() {
-//         *block = rng.next_u64() as Block;
-//     }
-
-//     // Puts zero in the unbounded bits
-//     if rem != 0 {
-//         *mask.last_mut().unwrap() &= ((1 as Block) << restantes) - 1;
-//     }
-// }

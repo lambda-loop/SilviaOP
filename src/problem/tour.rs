@@ -120,7 +120,32 @@ impl Tour {
 
     // if only the visited matters and the visited was altered in a nom proper way.. Then we need to
     // create some tour (probably bad) that matches the visited list
-    pub fn fix(&mut self) {}
+    pub fn fix(&mut self) {
+        let buffer = &mut self.buffer;
+
+        let visited_len = self.visited.len();
+        let rem = visited_len % usize::BITS as usize;
+
+        if rem != 0 {
+            let last = self.visited
+                .as_mut_slice()
+                .last_mut()
+                .unwrap();
+
+            *last &= (1usize << rem) - 1;
+        }
+
+        let mut idx = 0;
+        self.visited.remove_range(0..2);
+        for p in self.visited.ones() {
+            buffer[idx] = p as Point;
+            idx += 1;
+        }
+
+        self.visited.insert_range(0..2);
+        self.len = idx as Point;
+    }
+    
     pub fn cost(&self, costs: &Grid<f64>) -> f64 {
         todo!()
     }
