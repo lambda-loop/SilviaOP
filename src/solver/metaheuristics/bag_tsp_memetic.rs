@@ -27,27 +27,22 @@ type Assembly   = fn(
     max_iters: u64
 );
 
-type TspLocalSearch = fn(
-    tour   : &mut Tour,
-    rng: &mut SmallRng,
-    costs: &Grid<f64>,
-);
 
 pub struct MemeticBagTsp {
-    problem   : Problem   ,
-    budget    : u64       ,
-    genesis   : Genesis   ,
-    pop_size  : usize     ,
-    elite_size: usize     ,
-    round_len : usize     , 
-    fitness   : Fitness   ,
-    rng       : SmallRng  ,
-    crosser   : Crossing  , 
-    assembler : Assembly  ,
-    tsp_solver: 
+    problem         : Problem   ,
+    budget          : u64       ,
+    genesis         : Genesis   ,
+    pop_size        : usize     ,
+    elite_size      : usize     ,
+    round_len       : usize     , 
+    fitness         : Fitness   ,
+    rng             : SmallRng  ,
+    crosser         : Crossing  , 
+    assembler       : Assembly  ,
+    tsp_searcher    : TspSearch, 
     assembler_iters : u64 ,
-    mutator   : Mutation  ,
-    searcher : LocalSearch, 
+    mutator         : Mutation  ,
+    searcher        : LocalSearch, 
 }
 
 impl MemeticBagTsp {
@@ -119,9 +114,13 @@ impl MemeticBagTsp {
                 );
 
                 (self.mutator) (t, &mut rng, &occupied, costs, tmax);
-                *ts = (self.searcher) (t, &mut used, budget, p);
+                (*ts, *f) = (self.searcher) (
+                    t, *ts, *f, 
+                    &mut rng, &mut used, budget,
+                    p, self.fitness, self.tsp_searcher,
+                );
+
                 if used >= budget { return best_tour }
-                *f  = (self.fitness) (*ts);
             }
 
             occupied.clear();

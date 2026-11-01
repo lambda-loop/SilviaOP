@@ -10,11 +10,13 @@ use crate::{
 
 use super::Fitness;
 
+
+// AI Generated:
 pub fn sweeping(
     tour : &mut [Point],
     costs: &Grid<f64>,
 ) -> bool {
-    for r in (0..tour.len().saturating_sub(1)).step_by(2) {
+    for r in 0..tour.len().saturating_sub(1) {
         let s = r + 1;
 
         let (a, b, c, d) = (
@@ -42,6 +44,7 @@ pub fn sweeping(
 
     false
 }
+
 
 // AI Generated
 fn compute_two_swap(
