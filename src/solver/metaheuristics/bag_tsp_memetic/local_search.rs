@@ -26,6 +26,7 @@ pub type TspSearch = fn(
     tour   : &mut [Point],
     rng: &mut SmallRng,
     costs: &Grid<f64>,
+    tsp_iters: u64, 
 ) -> f64;
 
 use super::Fitness;
@@ -38,8 +39,9 @@ pub type LocalSearch = fn(
     used    : &mut u64  ,
     budget  : u64       ,
     problem : &Problem  ,
-    fitness : Fitness   ,
+    fitness : &Fitness   ,
     searcher: TspSearch , 
+    tsp_iters: u64, 
 ) -> (TourStatus, f64); // (status, fit)
 
 #[derive(Clone, Copy)]
@@ -71,62 +73,61 @@ pub fn canonical(
     used   : &mut u64  ,
     budget : u64       ,
     problem: &Problem  ,
-    fitness: Fitness   ,
+    fitness: &Fitness   ,
     searcher: TspSearch , 
+    tsp_iters: u64, 
 ) -> (TourStatus, f64) {
     let tmax = problem.tmax;
     let mut trys = Trys::Working;
 
+    // AI ADJUSTED
     loop {
-        if status.cost > tmax {
-            if let Some((fit_, ts)) 
-                = remotion(
-                    tour,
-                    status,
-                    fit,
-                    used,
-                    budget,
-                    problem,
-                    fitness
-                ) {
-                    fit = fit_;
-                    status = ts;
-                    trys = Trys::reset();
+        let improved = if status.cost > tmax {
+            if let Some((fit_, ts)) = remotion(
+                tour, status, fit,
+                used, budget, problem, fitness,
+            ) {
+                fit = fit_;
+                status = ts;
+                true
             } else {
-                if let Trys::GiveUp = trys { break }
-                else { trys = trys.next() }
+                false
             }
-
         } else {
-            if let Some((ts, fit_)) 
-                = insertion(
-                    tour,
-                    status,
-                    fit,
-                    used,
-                    budget,
-                    problem,
-                    fitness
-                ) {
-                    fit = fit_;
-                    status = ts;
-
-            trys = Trys::reset();
+            if let Some((ts, fit_)) = insertion(
+                tour, status, fit,
+                used, budget, problem, fitness,
+            ) {
+                fit = fit_;
+                status = ts;
+                true
             } else {
-                if let Trys::GiveUp = trys { break }
-                else { trys = trys.next() }
+                false
             }
-        }
-
-        if *used >= budget { break }
-        if sweeping(tour.as_mut_slice(), &problem.costs) {
-            status.cost = 
-                (searcher)(tour.as_mut_slice(), rng, &problem.costs);
+        };
+        
+        if *used > budget { break }
+        
+        let swept = sweeping(
+            tour.as_mut_slice(),
+            &problem.costs,
+        );
+        
+        if swept {
+            status.cost = searcher(
+                tour.as_mut_slice(),
+                rng,
+                &problem.costs,
+                tsp_iters,
+            );
+            
             *used += 1;
-            fit = (fitness)(status);
-            trys = Trys::reset();
+            fit = fitness(status);
+        }
+        
+        if !improved && !swept {
+            break;
         }
     }
-
     (status, fit)
 }

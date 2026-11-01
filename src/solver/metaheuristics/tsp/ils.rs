@@ -12,13 +12,23 @@ use grid::Grid;
 // 2 -> ILS + 2-opt + relocate	
 // 3 -> ILS + 2-opt + Or-opt	
 
-pub fn ils(
-    tour : &mut Tour,
+pub fn assembly(
+    tour : &mut [Point],
     rng  : &mut SmallRng,
     costs: &Grid<f64>,
     max_iters: u64 // max iters has to be greater than 10.
 ) -> f64 {
-    let mut current_tour = tour.as_slice().to_owned();
+    super::naive_greedy::heuristic(tour, costs);
+    ils(tour, rng, costs, max_iters)
+}
+
+pub fn ils(
+    tour : &mut [Point],
+    rng  : &mut SmallRng,
+    costs: &Grid<f64>,
+    max_iters: u64 // max iters has to be greater than 10.
+) -> f64 {
+    let mut current_tour = tour.to_owned();
     let mut current_cost = {
         let mut cost     = 0.;
         let mut previous = 0usize;
@@ -45,8 +55,7 @@ pub fn ils(
         
         if new_cost != current_cost {
             if new_cost < best_cost {
-                tour.as_mut_slice()
-                    .copy_from_slice(&current_tour);
+                tour.copy_from_slice(&current_tour);
                 best_cost = new_cost;
 
             }

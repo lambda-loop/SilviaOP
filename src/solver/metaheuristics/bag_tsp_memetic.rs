@@ -7,7 +7,6 @@ use rand::{
     rngs::SmallRng,
 };
 
-
 mod cross       ; use cross::*  ;
 mod genesis     ; use genesis::*;
 mod mutation    ; use mutation::*;
@@ -20,54 +19,69 @@ use crate::{
     },
 };
 
-type Fitness    = fn(TourStatus) -> f64;
+pub type Fitness =
+    Box<dyn Fn(TourStatus) -> f64>;
+
 type Assembly   = fn(
-    &mut Tour, &mut SmallRng, 
+    &mut [Point], &mut SmallRng, 
     costs: &Grid<f64>,
     max_iters: u64
 ) -> f64; // cost
 
 
 pub struct MemeticBagTsp {
-    problem         : Problem   ,
-    budget          : u64       ,
+    // problem         : Problem   ,
+    // budget          : u64       ,
     genesis         : Genesis   ,
     pop_size        : usize     ,
     elite_size      : usize     ,
     round_len       : usize     , 
-    fitness         : Fitness   ,
+    // fitness         : Fitness   ,
     rng             : SmallRng  ,
     crosser         : Crossing  , 
     assembler       : Assembly  ,
     tsp_searcher    : TspSearch, 
-    assembler_iters : u64 ,
+    tsp_iters       : u64 ,
     mutator         : Mutation  ,
     searcher        : LocalSearch, 
 }
 
 impl MemeticBagTsp {
-    fn run (self) -> Tour {
+    fn run (
+        &mut self       ,
+        p     : &Problem,
+        budget: u64     ,
+    ) -> (Tour, u64) {
         let mut used    = 0               ;
-        let budget      = self.budget     ;
-        let mut rng     = self.rng        ;
-        let p           = &self.problem   ;
         let tmax        = p.tmax          ;
         let costs       = &p.costs        ;
         let scores      = &p.scores       ;
-        let problem_len = self.problem.len;
+        let problem_len = p.len;
         let elite_size  = self.elite_size ;
         let round_len   = self.round_len  ;
         let pop_size    = self.pop_size   ;
 
-        let aiters = self.assembler_iters;
+        let tsp_iters = self.tsp_iters;
         let mut chairs = vec![
             Tour::new(problem_len);
             elite_size
         ].into_boxed_slice();
 
+        let fitness: Fitness = Box::new(
+            move |status: TourStatus| {
+                let score = status.score as f64;
+                
+                if status.cost <= tmax {
+                    score
+                } else {
+                    score * (tmax / status.cost).powi(4)
+                }
+            }
+        );
+
         let mut pop: Box<_> = (self.genesis) (
             problem_len,
-            &mut rng,
+            &mut self.rng,
             pop_size,
         ).into_iter()
          .map(|tour| {
@@ -79,7 +93,7 @@ impl MemeticBagTsp {
                  "credits were not enough for this tsp_memetic run!"
              );
 
-             let fit = (self.fitness) (ts);
+             let fit = fitness (ts);
              (tour, fit, ts)
          }).collect();
 
@@ -87,8 +101,9 @@ impl MemeticBagTsp {
         let mut best_tour  = Tour::new(problem_len);
         let mut best_score = 0;
 
+        let mut iters = 0u64;
         while used < budget {
-            tournament(&mut rng, round_len, &pop, &mut chairs);
+            tournament(&mut self.rng, round_len, &pop, &mut chairs);
             if let Some((tour, _, ts)) = extracts_best_feasible(
                 &pop, best_score, tmax,
             ) && ts.score > best_score {
@@ -101,26 +116,26 @@ impl MemeticBagTsp {
             }
 
             for (t, f, ts) in pop.iter_mut() {
-                let l = rng.random_range(0..elite_size);
-                let r = rng.random_range(0..elite_size);
+                let l = self.rng.random_range(0..elite_size);
+                let r = self.rng.random_range(0..elite_size);
 
                 let l = chairs[l].visited_block();
                 let r = chairs[r].visited_block();
                 let child = t.visited_block_mut();
 
-                (self.crosser)(l, r, child, &mut rng);
+                (self.crosser)(l, r, child, &mut self.rng);
                 t.fix();
 
                 ts.cost = (self.assembler)(
-                    t, &mut rng,
-                    costs, aiters
+                    t.as_mut_slice(), &mut self.rng,
+                    costs, tsp_iters
                 );
                 ts.score = t.score(scores);
 
                 *ts = (self.mutator) (
                     t,
                     *ts, 
-                    &mut rng,
+                    &mut self.rng,
                     &occupied,
                     &mut used,
                     budget, 
@@ -129,11 +144,11 @@ impl MemeticBagTsp {
                     // tmax,
                 );
 
-                *f = (self.fitness) (*ts);
+                *f = fitness(*ts);
                 (*ts, *f) = (self.searcher) (
                     t, *ts, *f, 
-                    &mut rng, &mut used, budget,
-                    p, self.fitness, self.tsp_searcher,
+                    &mut self.rng, &mut used, budget,
+                    p, &fitness, self.tsp_searcher,tsp_iters,
                 );
 
                 if ts.cost <= tmax && ts.score > best_score {
@@ -141,15 +156,71 @@ impl MemeticBagTsp {
                     best_tour = t.clone();
                 }
 
-                if used >= budget { return best_tour }
+                if used >= budget { return (best_tour, iters) }
             }
 
             occupied.clear();
+            iters += 1;
         }
 
-        best_tour
+        (best_tour, iters)
     }
 }
+use std::time::Instant;
+use itertools::iproduct;
+use crate::{Method, experiment::Result as EResult};
+
+use super::tsp::ils;
+impl Method for MemeticBagTsp {
+    fn shot(&mut self, p: &Problem, budget: u64) -> EResult {
+        let start = Instant::now();
+        let (tour, iters) = MemeticBagTsp::run(self, p, budget);
+        let time = start.elapsed();
+
+        EResult {
+            tour, time, iters,
+        }
+    }
+
+    fn all_ms() -> Vec<(Self, String)> {
+        let mut v = Vec::new();
+        for (pop, elite, round, tspiters) in iproduct!(
+            POP_SIZES ,
+            ELITE_SIZES,
+            ROUND_SIZES,
+            TSPITERS  ,
+        ) {
+            let seed: u64 = rand::random();
+            let rng = SmallRng::seed_from_u64(seed);
+            let m = MemeticBagTsp {
+                genesis          : pop_genesis   ,
+                pop_size         : pop           ,
+                elite_size       : elite         ,
+                round_len        : round         ,
+                // fitness          : todo!()       ,
+                rng              : rng           ,
+                crosser          : bag_cross     ,
+                assembler        : ils::assembly ,
+                tsp_searcher     : ils::ils      ,
+                tsp_iters        : tspiters      ,
+                mutator          : inserts_unused,
+                searcher         : canonical     ,
+            };
+
+            let m_name
+                = "memetic_bag_tsp_popsize:{pop}_elite_size:{elite}_round_len:{round}_assembleris:{assembler}_seed:{seed}";
+
+            v.push((m, m_name.to_string()));
+        }
+
+        v
+    }
+}
+
+const POP_SIZES  : [usize;3] = [ 20, 30, 50 ];
+const ELITE_SIZES: [usize;3] = [ 5 , 7 , 10 ];
+const ROUND_SIZES: [usize;3] = [ 3 , 5 , 8 ];
+const TSPITERS: [u64;3] = [ 1_000 , 10_000 , 100_000 ];
 
 // we dont know anymoer if its sorted or not
 fn extracts_best_feasible(
@@ -204,4 +275,19 @@ fn round<'a> (
     }
 
     &pop[best_idx].0.as_slice()
+}
+
+
+pub fn fitness(
+    status: TourStatus,
+    tmax: f64,
+    // beta: i32,
+) -> f64 {
+    let score = status.score as f64;
+
+    if status.cost <= tmax {
+        score
+    } else {
+        score * (tmax / status.cost).powi(4) // lets just use 4
+    }
 }

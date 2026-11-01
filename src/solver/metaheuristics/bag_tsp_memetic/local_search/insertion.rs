@@ -15,7 +15,7 @@ pub type LocalSearch = fn(
     used   : &mut u64 ,
     budget : u64      ,
     problem: &Problem ,
-    fitness: Fitness  ,
+    fitness: &Fitness  ,
 ) -> TourStatus; // (fit, cost)
 
 pub fn insertion (
@@ -25,7 +25,7 @@ pub fn insertion (
     used   : &mut u64  ,
     budget : u64       ,
     problem: &Problem  ,
-    fitness: Fitness   ,
+    fitness: &Fitness   ,
 ) -> Option<(TourStatus, f64)> {
     let mut best_fit = fit;
     let mut best_ts  = status;
@@ -70,7 +70,7 @@ fn find_best_insertion_idx (
     used   : &mut u64  ,
     budget : u64       ,
     problem: &Problem  ,
-    fitness: Fitness   ,
+    fitness: &Fitness   ,
 
     v: usize           ,
 ) -> Option<(usize, TourStatus, f64)> {

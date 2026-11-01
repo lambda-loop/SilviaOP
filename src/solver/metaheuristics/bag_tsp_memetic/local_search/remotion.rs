@@ -15,7 +15,7 @@ pub type LocalSearch = fn(
     used   : &mut u64 ,
     budget : u64      ,
     problem: &Problem ,
-    fitness: Fitness  ,
+    fitness: &Fitness  ,
 ) -> TourStatus; // (fit, cost)
 
 pub fn remotion(
@@ -25,7 +25,7 @@ pub fn remotion(
     used   : &mut u64  ,
     budget : u64       ,
     problem: &Problem  ,
-    fitness: Fitness   ,
+    fitness: &Fitness   ,
 ) -> Option<(f64, TourStatus)> {
     let mut best_fit    = fit;
     let mut best_status = status;
