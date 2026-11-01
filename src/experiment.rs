@@ -51,10 +51,27 @@ impl Conclusion {
         credits: u64,
         extra_info: String,
     ) -> Self {
-        let mut rs: Vec<_> = rs.into_iter().map(|r| {
-            let r_score = p.eval_route(&r.tour).total_score;
-            (r, r_score as f64)
-        }).collect();
+        let mut rs: Vec<_> = rs
+            .into_iter()
+            .enumerate()
+            .map(|(i, r)| {
+                let result = p.eval_route(r.tour.as_slice());
+                
+                assert!(
+                    result.total_consume.is_finite()
+                        && result.total_consume <= p.tmax,
+                    "Invalid tour! Method: {}, shot: {}, \
+                     cost: {}, tmax: {}, score: {}",
+                    method_name,
+                    i + 1,
+                    result.total_consume,
+                    p.tmax,
+                    result.total_score,
+                );
+                
+                (r, result.total_score as f64)
+            })
+            .collect();
 
         rs.sort_unstable_by(|(_, l), (_, r)| l.total_cmp(r));
         let (worst_r, worst_score) = rs[0].clone();
