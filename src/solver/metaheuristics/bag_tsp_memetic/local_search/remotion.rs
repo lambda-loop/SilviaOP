@@ -1,5 +1,5 @@
 
-// everything will be first improvement here
+// everything will be best* improvement here
 
 use crate::{
     Problem, problem::{
@@ -27,6 +27,9 @@ pub fn remotion(
     problem: &Problem  ,
     fitness: Fitness   ,
 ) -> Option<(f64, TourStatus)> {
+    let mut best_fit    = fit;
+    let mut best_status = status;
+    let mut best_remotion = None;
     let tour_len = tour.len();
     for i in 0..tour_len {
         if *used >= budget {
@@ -42,13 +45,20 @@ pub fn remotion(
         );
 
         let fit_ = (fitness)(status_);
-        if fit_ > fit {
-            tour.remove_idx(i as usize);
-            return Some((fit_, status_))
+        if fit_ > best_fit {
+            best_remotion = Some(i);
+            best_status = status_;
+            best_fit = fit_;
         }
     }
 
-    None
+    match best_remotion {
+        None => None,
+        Some(i) => {
+            tour.remove_idx(i as usize);
+            Some((best_fit, best_status))
+        },
+    }
 }
 
 fn compute_with_remotion(

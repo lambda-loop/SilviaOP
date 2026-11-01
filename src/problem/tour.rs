@@ -165,6 +165,23 @@ impl Tour {
         self.visited.remove(p as usize);
         self.len -= 1;
     }
+
+    // AI Generated
+    pub fn insert_in(&mut self, v: Point, idx: usize) {
+        let len = self.len as usize;
+        let p = v as usize;
+        
+        assert!(idx <= len);
+        assert!(len < self.buffer.len());
+        assert!(p >= 2 && p < self.visited.len());
+        assert!(!self.visited.contains(p));
+        
+        self.buffer.copy_within(idx..len, idx + 1);
+        self.buffer[idx] = v;
+        
+        self.visited.insert(p);
+        self.len += 1;
+    }
 }
 
 impl std::ops::Deref for Tour {
