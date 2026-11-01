@@ -91,6 +91,7 @@ pub fn canonical(
                 ) {
                     fit = fit_;
                     status = ts;
+                    trys = Trys::reset();
             } else {
                 if let Trys::GiveUp = trys { break }
                 else { trys = trys.next() }
@@ -109,6 +110,8 @@ pub fn canonical(
                 ) {
                     fit = fit_;
                     status = ts;
+
+            trys = Trys::reset();
             } else {
                 if let Trys::GiveUp = trys { break }
                 else { trys = trys.next() }
@@ -122,9 +125,6 @@ pub fn canonical(
             *used += 1;
             fit = (fitness)(status);
             trys = Trys::reset();
-
-            
-
         }
     }
 

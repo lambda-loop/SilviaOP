@@ -89,12 +89,13 @@ impl MemeticBagTsp {
 
         while used < budget {
             tournament(&mut rng, round_len, &pop, &mut chairs);
-            if let Some((tour, _, ts)) = extracts_best_feasible(
-                &pop, best_score, tmax,
-            ) && ts.score > best_score {
-                best_tour = tour.clone();
-                best_score = ts.score;
-            }
+            // dont care for the first gen!
+            // if let Some((tour, _, ts)) = extracts_best_feasible(
+            //     &pop, best_score, tmax,
+            // ) && ts.score > best_score {
+            //     best_tour = tour.clone();
+            //     best_score = ts.score;
+            // }
 
             for (t, _, _) in &pop {
                 occupied.union_with(t.visited());
@@ -135,6 +136,11 @@ impl MemeticBagTsp {
                     &mut rng, &mut used, budget,
                     p, self.fitness, self.tsp_searcher,
                 );
+
+                if ts.cost <= tmax && ts.score > best_score {
+                    best_score = ts.score;
+                    best_tour = t.clone();
+                }
 
                 if used >= budget { return best_tour }
             }
@@ -194,7 +200,7 @@ fn round<'a> (
         i = rng.random_range(0..pop_len);
         if pop[i].1 > best_fit {
             best_idx = i;
-            best_fit = pop[1].1;
+            best_fit = pop[i].1;
         }
     }
 
