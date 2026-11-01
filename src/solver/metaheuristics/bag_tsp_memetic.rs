@@ -60,8 +60,10 @@ impl MemeticBagTsp {
         let pop_size    = self.pop_size   ;
 
         let aiters = self.assembler_iters;
-        let mut chairs: Box<_> = Vec::with_capacity(elite_size)
-            .into_boxed_slice();
+        let mut chairs = vec![
+            Tour::new(problem_len);
+            elite_size
+        ].into_boxed_slice();
 
         let mut pop: Box<_> = (self.genesis) (
             problem_len,
@@ -187,7 +189,7 @@ fn round<'a> (
 
     // dont need to check round_len > 1 omg!
     let mut i = rng.random_range(0..pop_len);
-    let (mut best_idx, mut best_fit) = (i, pop[0].1);
+    let (mut best_idx, mut best_fit) = (i, pop[i].1);
     for _ in 1..round_len {
         i = rng.random_range(0..pop_len);
         if pop[i].1 > best_fit {
