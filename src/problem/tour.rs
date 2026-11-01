@@ -119,6 +119,14 @@ impl Tour {
         self.visited.zeroes()
     }
 
+    pub fn extend_from_slice(&mut self, vs: &[Point]) {
+        self.reset();
+        for &v in vs {
+            self.push(v);
+        }
+        
+    }
+
     // if only the visited matters and the visited was altered in a nom proper way.. Then we need to
     // create some tour (probably bad) that matches the visited list
     pub fn fix(&mut self) {

@@ -113,6 +113,7 @@ impl MemeticBagTsp {
                     t, &mut rng,
                     costs, aiters
                 );
+                ts.score = t.score(scores);
 
                 *ts = (self.mutator) (
                     t,
@@ -170,8 +171,10 @@ fn tournament (
     pop      : &[(Tour, f64, TourStatus)],
     chairs   : &mut [Tour]               ,
 ) {
-
-    todo!()
+    for chair in chairs {
+        let winner = round(rng, round_len, pop);
+        chair.extend_from_slice(winner);
+    }
 }
 
 
@@ -179,7 +182,19 @@ fn round<'a> (
     rng: &mut SmallRng,
     round_len: usize,
     pop: &'a[(Tour, f64, TourStatus)],
-) -> &'a Tour {
+) -> &'a [Point]{
+    let pop_len = pop.len();
 
-    todo!()
+    // dont need to check round_len > 1 omg!
+    let mut i = rng.random_range(0..pop_len);
+    let (mut best_idx, mut best_fit) = (i, pop[0].1);
+    for _ in 1..round_len {
+        i = rng.random_range(0..pop_len);
+        if pop[i].1 > best_fit {
+            best_idx = i;
+            best_fit = pop[1].1;
+        }
+    }
+
+    &pop[best_idx].0.as_slice()
 }
