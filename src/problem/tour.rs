@@ -155,12 +155,26 @@ impl Tour {
         self.len = idx as Point;
     }
     
+    // AI Generated
     pub fn cost(&self, costs: &Grid<f64>) -> f64 {
-        todo!()
+        let mut cost = 0.0;
+        let mut previous = 0usize;
+        
+        for &v in self.as_slice() {
+            let v = v as usize;
+            cost += costs[(previous, v)];
+            previous = v;
+        }
+        
+        cost + costs[(previous, 1)]
     }
 
+
     pub fn score(&self, scores: &[u16]) -> u32 {
-        todo!()
+        self.as_slice()
+            .iter()
+            .map(|&v| scores[v as usize] as u32)
+            .sum()
     }
 
     pub fn remove_idx(&mut self, i: usize) {
