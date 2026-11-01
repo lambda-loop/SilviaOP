@@ -25,7 +25,7 @@ type Assembly   = fn(
     &mut Tour, &mut SmallRng, 
     costs: &Grid<f64>,
     max_iters: u64
-);
+) -> f64; // cost
 
 
 pub struct MemeticBagTsp {
@@ -53,6 +53,7 @@ impl MemeticBagTsp {
         let p           = &self.problem   ;
         let tmax        = p.tmax          ;
         let costs       = &p.costs        ;
+        let scores      = &p.scores       ;
         let problem_len = self.problem.len;
         let elite_size  = self.elite_size ;
         let round_len   = self.round_len  ;
@@ -108,12 +109,24 @@ impl MemeticBagTsp {
                 (self.crosser)(l, r, child, &mut rng);
                 t.fix();
 
-                (self.assembler)(
+                ts.cost = (self.assembler)(
                     t, &mut rng,
                     costs, aiters
                 );
 
-                (self.mutator) (t, &mut rng, &occupied, costs, tmax);
+                *ts = (self.mutator) (
+                    t,
+                    *ts, 
+                    &mut rng,
+                    &occupied,
+                    &mut used,
+                    budget, 
+                    costs,
+                    scores, 
+                    // tmax,
+                );
+
+                *f = (self.fitness) (*ts);
                 (*ts, *f) = (self.searcher) (
                     t, *ts, *f, 
                     &mut rng, &mut used, budget,
