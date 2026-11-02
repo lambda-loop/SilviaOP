@@ -28,70 +28,74 @@ use rand::rngs;
 use rendering::renderer::*;
 use experiment::*;
 
-use solver::metaheuristics::tsp::{
-    ils, naive_greedy,
+use solver::metaheuristics::{
+    bag_tsp_memetic::*,
+    tsp::{
+        ils, naive_greedy,
+    },
 };
-#[macroquad::main(window_conf)]
-async fn main() {
-    let (sx, rx) = mpsc::sync_channel(10);
+// #[macroquad::main(window_conf)]
+fn main() {
+    let (sx, rx) = mpsc::sync_channel(16);
 
     print!("{}", Conclusion::header());
 
     // thread::spawn(move || oplib_problems(sx));
     thread::spawn(move || all_problems(sx));
+    MemeticBagTsp::run_all_ms_in_all_ps(rx, 30);
 
-    for _ in 0..40  {
-        rx.recv();
-    }
+    // for _ in 0..40  {
+    //     rx.recv();
+    // }
 
-    let (content, name) = rx
-        .recv()
-        .expect("Nenhum arquivo .oplib recebido");
+    // let (content, name) = rx
+    //     .recv()
+    //     .expect("Nenhum arquivo .oplib recebido");
 
-    // let problem = Problem::from_op(&content);
-    let problem = Problem::from_classical(&content);
-    let mut tour = Tour::new(problem.len);
+    // // let problem = Problem::from_op(&content);
+    // let problem = Problem::from_classical(&content);
+    // let mut tour = Tour::new(problem.len);
 
-    let mut t_rng = rand::rng();
-    for i in 0..problem.len {
-        if t_rng.random_bool(0.6) {
-            tour.push(i as u16);
-        }
-    }
-
-
-
-    // let mut map = Map::from_op(
-    let mut map = Map::from_classical(
-        &content,
-        tour,
-        0.0,
-        name,
-        0,
-    );
     // let mut t_rng = rand::rng();
-    let mut rng = rngs::SmallRng::from_rng(&mut t_rng);
+    // for i in 0..problem.len {
+    //     if t_rng.random_bool(0.6) {
+    //         tour.push(i as u16);
+    //     }
+    // }
 
-    let mut renderer = Renderer::new(map);
 
-    loop {
-        if is_key_pressed(KeyCode::Q) {
-            break;
-        }
 
-        if is_key_pressed(KeyCode::I) {
-            naive_greedy::heuristic(renderer.map.tour.as_mut_slice(), &problem.costs);
+    // // let mut map = Map::from_op(
+    // let mut map = Map::from_classical(
+    //     &content,
+    //     tour,
+    //     0.0,
+    //     name,
+    //     0,
+    // );
+    // // let mut t_rng = rand::rng();
+    // let mut rng = rngs::SmallRng::from_rng(&mut t_rng);
+
+    // let mut renderer = Renderer::new(map);
+
+    // loop {
+    //     if is_key_pressed(KeyCode::Q) {
+    //         break;
+    //     }
+
+    //     if is_key_pressed(KeyCode::I) {
+    //         naive_greedy::heuristic(renderer.map.tour.as_mut_slice(), &problem.costs);
             
-            ils::ils(&mut renderer.map.tour.as_mut_slice(), &mut rng, &problem.costs, 1000_000);
-            // renderer.map.tour
+    //         ils::ils(&mut renderer.map.tour.as_mut_slice(), &mut rng, &problem.costs, 1000_000);
+    //         // renderer.map.tour
             
-        }
+    //     }
 
-        clear_background(BLACK);
-        renderer.draw();
+    //     clear_background(BLACK);
+    //     renderer.draw();
 
-        next_frame().await;
-    }
+    //     next_frame().await;
+    // }
 }
 
 fn oplib_problems(sx: SyncSender<(String, String)>) {
@@ -126,7 +130,7 @@ fn oplib_problems(sx: SyncSender<(String, String)>) {
 }
 
 pub fn all_problems(
-    sx: SyncSender<(String, String)>
+    sx: SyncSender<(Problem, String)>
 ) {
     let dir = fs::read_dir("data").unwrap();
     // let mut inputs = Vec::new();
@@ -139,8 +143,8 @@ pub fn all_problems(
                 if file_name.ends_with(".txt") {
                     let content = fs::read_to_string(entry.path()).unwrap();
                     sx.send((
-                        content,
-                        // Problem::from_op(&content),
+                        // content,
+                        Problem::from_classical(&content),
                         String::from(file_name),
                     )).unwrap();
                     // inputs.push((

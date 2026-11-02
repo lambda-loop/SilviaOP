@@ -106,7 +106,7 @@ pub fn canonical(
             }
         };
         
-        if *used > budget { break }
+        if *used >= budget { break }
         
         let swept = sweeping(
             tour.as_mut_slice(),
