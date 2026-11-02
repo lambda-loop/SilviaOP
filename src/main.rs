@@ -40,8 +40,8 @@ fn main() {
 
     // print!("{}", Conclusion::header());
 
-    // thread::spawn(move || oplib_problems(sx));
-    thread::spawn(move || all_problems(sx));
+    thread::spawn(move || oplib_problems(sx));
+    // thread::spawn(move || all_problems(sx));
     MemeticBagTsp::run_all_ms_in_all_ps(rx, 30);
 
     // for _ in 0..40  {
