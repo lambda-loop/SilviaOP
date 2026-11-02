@@ -82,7 +82,7 @@ async fn main() {
         if is_key_pressed(KeyCode::I) {
             naive_greedy::heuristic(renderer.map.tour.as_mut_slice(), &problem.costs);
             
-            ils::ils(&mut renderer.map.tour, &mut rng, &problem.costs, 1_000);
+            ils::ils(&mut renderer.map.tour.as_mut_slice(), &mut rng, &problem.costs, 1000_000);
             // renderer.map.tour
             
         }

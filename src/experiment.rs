@@ -1,5 +1,9 @@
 //
 
+use std::sync::{
+    mpsc::{self, Receiver, SyncSender}
+};
+
 use crate::config;
 use crate::problem::Problem;
 use crate::problem::Tour;
@@ -259,13 +263,15 @@ pub trait Method where Self:Sized {
     }
 
     fn run_all_ms_in_all_ps(
-        ps: Vec<(Problem, String)>,
+        // ps: Vec<(Problem, String)>,
+        ps: Receiver<(Problem, String)>,
         num_shots_per_method: usize,
     ) { // -> Vec<Conclusion> {
         assert_ne!(num_shots_per_method, 0);
         // let ps_len = ps.len();
         
-        ps.into_par_iter()
+        ps.into_iter()
+            .par_bridge()
             .for_each(|(p, p_name)| {
                 Self::run_all_ms_in_p(
                     &p,
