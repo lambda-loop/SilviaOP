@@ -4,6 +4,12 @@ use std::sync::{
     mpsc::{self, Receiver, SyncSender}
 };
 
+
+use std::{
+    io::{self, BufWriter, Write},
+    thread,
+};
+
 use crate::config;
 use crate::problem::Problem;
 use crate::problem::Tour;
@@ -172,7 +178,7 @@ impl Conclusion {
 
     pub fn to_csv(&self) -> String {
         format!(
-            "{},{},{:1},{},{:.1},{:.1},{:.2},{:.2},{:.4},{:.4},\"{:?}\",\"{:?}\",{:.2},{:.2},{},{},{}\n",
+            "{},{},{:1},{},{:.1},{:.1},{:.2},{:.2},{:.4},{:.4},\"{}\",\"{}\",{:.2},{:.2},{},{},{}\n",
             self.problem_name,
             self.problem_size,
             self.problem_budget,
@@ -237,49 +243,97 @@ pub trait Method where Self:Sized {
     }
 
     fn all_ms() -> Vec<(Self, String)>;
+    // AI ADJUSTED:
     fn run_all_ms_in_p(
         p: &Problem,
         problem_name: &str,
         num_shots_per_method: usize,
-    ) { // -> Vec<Conclusion> {
+        output: &SyncSender<String>,
+    ) {
         let ms = Self::all_ms();
-        // let mut ers = Vec::new();
-        for (mut m, m_name) in ms.into_iter() {
+        
+        for (mut m, m_name) in ms {
             for credits in config::CREDITS {
                 let seeds = random_seeds(num_shots_per_method);
+                
                 let line = m.run(
-                    p                   ,
-                    credits             ,
-                    seeds               ,
-                    problem_name        ,
-                    &m_name             ,
-                    ""                  , // TODO: problem with no extra
+                    p,
+                    credits,
+                    seeds,
+                    problem_name,
+                    &m_name,
+                    "",
                 ).to_csv();
-                // doesnt occupies memory but can lose performance
-                // by sync'ing everytime..
-                print!("{line}");
+                
+                output.send(line)
+                    .expect("Output thread disconnected");
             }
         }
     }
 
+    // AI ADJUSTED
     fn run_all_ms_in_all_ps(
-        // ps: Vec<(Problem, String)>,
         ps: Receiver<(Problem, String)>,
         num_shots_per_method: usize,
-    ) { // -> Vec<Conclusion> {
+    ) {
         assert_ne!(num_shots_per_method, 0);
-        // let ps_len = ps.len();
         
-        ps.into_iter()
-            .par_bridge()
-            .for_each(|(p, p_name)| {
-                Self::run_all_ms_in_p(
-                    &p,
-                    &p_name,
-                    num_shots_per_method,
-                );
-
-            });
+        // Dedicated stdout writer.
+        let (tx, rx) = mpsc::sync_channel::<String>(32);
+        
+        let writer = thread::spawn(move || -> io::Result<()> {
+            let mut out = BufWriter::new(io::stdout());
+            
+            out.write_all(Conclusion::header().as_bytes())?;
+            out.flush()?;
+            
+            for line in rx {
+                out.write_all(line.as_bytes())?;
+                out.flush()?;
+            }
+            
+            Ok(())
+        });
+        
+        // CPUs allocated to this process.
+        let cpus = std::env::var("SLURM_CPUS_PER_TASK")
+            .ok()
+            .and_then(|s| s.parse::<usize>().ok())
+            .or_else(|| {
+                thread::available_parallelism()
+                    .ok()
+                    .map(|n| n.get())
+            })
+            .unwrap_or(1);
+        
+        // Reserve one CPU for the producer
+        // and another for the stdout writer.
+        let workers = cpus.saturating_sub(2).max(1);
+        
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(workers)
+            .build()
+            .expect("Failed to initialize Rayon");
+        
+        pool.install(|| {
+            ps.into_iter()
+                .par_bridge()
+                .for_each(|(p, p_name)| {
+                    Self::run_all_ms_in_p(
+                        &p,
+                        &p_name,
+                        num_shots_per_method,
+                        &tx,
+                    );
+                });
+        });
+        
+        // Close the channel after all experiments.
+        drop(tx);
+        
+        writer.join()
+            .expect("Writer thread panicked")
+            .expect("Failed to write stdout");
     }
 }
 

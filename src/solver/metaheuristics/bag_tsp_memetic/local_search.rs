@@ -44,26 +44,19 @@ pub type LocalSearch = fn(
     tsp_iters: u64, 
 ) -> (TourStatus, f64); // (status, fit)
 
-#[derive(Clone, Copy)]
-enum Trys {
-    Working,
-    FailedOnce,
-    GiveUp,
-}
+// impl Trys {
+//     fn reset() -> Self {
+//         Trys::Working
+//     }
 
-impl Trys {
-    fn reset() -> Self {
-        Trys::Working
-    }
-
-    fn next(self) -> Self {
-        match self {
-            Trys::Working => Trys::FailedOnce,
-            _             => Trys::GiveUp    ,
-        }
+//     fn next(self) -> Self {
+//         match self {
+//             Trys::Working => Trys::FailedOnce,
+//             _             => Trys::GiveUp    ,
+//         }
         
-    }
-}
+//     }
+// }
 
 pub fn canonical(
     tour   : &mut Tour ,
@@ -78,7 +71,7 @@ pub fn canonical(
     tsp_iters: u64, 
 ) -> (TourStatus, f64) {
     let tmax = problem.tmax;
-    let mut trys = Trys::Working;
+    // let mut trys = Trys::Working;
 
     // AI ADJUSTED
     loop {

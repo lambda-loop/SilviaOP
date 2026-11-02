@@ -16,7 +16,7 @@ evaluate(&tour); // prints [5, 9]
 pub type Point = u16;
 
 // TODO: use maybeUnit so Tour<T> would be better.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Tour {
     buffer: Box<[Point]>,
     // TODO: check if its on heap or stack
@@ -224,4 +224,27 @@ pub struct TourStatus {
 pub struct RouteStatus {
     pub total_score: u32,
     pub total_consume: f64,
+}
+
+use std::fmt::{self, Debug};
+
+impl Debug for Tour {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Tour")
+            .field("len", &self.len)
+            .field("capacity", &self.buffer.len())
+            .field("route", &self.as_slice())
+            .finish()
+    }
+}
+impl fmt::Display for Tour {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "0")?;
+
+        for &v in self.as_slice() {
+            write!(f, " -> {v}")?;
+        }
+
+        write!(f, " -> 1")
+    }
 }

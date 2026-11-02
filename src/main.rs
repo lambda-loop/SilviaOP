@@ -38,7 +38,7 @@ use solver::metaheuristics::{
 fn main() {
     let (sx, rx) = mpsc::sync_channel(16);
 
-    print!("{}", Conclusion::header());
+    // print!("{}", Conclusion::header());
 
     // thread::spawn(move || oplib_problems(sx));
     thread::spawn(move || all_problems(sx));
@@ -98,7 +98,7 @@ fn main() {
     // }
 }
 
-fn oplib_problems(sx: SyncSender<(String, String)>) {
+fn oplib_problems(sx: SyncSender<(Problem, String)>) {
     let dir = fs::read_dir("OPLib").unwrap(); // let mut inputs = Vec::new();
     let count = dir.count();
     let dir = fs::read_dir("OPLib").unwrap(); 
@@ -112,8 +112,8 @@ fn oplib_problems(sx: SyncSender<(String, String)>) {
                 if file_name.ends_with(".oplib") {
                     let content = fs::read_to_string(entry.path()).unwrap();
                     sx.send((
-                        content,
-                        // Problem::from_op(&content),
+                        // content,
+                        Problem::from_op(&content),
                         String::from(file_name),
                     )).unwrap();
                     // inputs.push((
