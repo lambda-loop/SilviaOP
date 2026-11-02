@@ -193,25 +193,34 @@ impl Conclusion {
     }
 }
 
+use rand::{rngs::SmallRng, *};
 use rayon::prelude::*;
 pub trait Method where Self:Sized {
     // type Args;
-    fn shot(&mut self, p: &Problem, credits: u64) -> Result;
+    fn shot(&mut self, p: &Problem, rng: SmallRng, credits: u64) -> Result;
     fn run (
         &mut self,
-        p: &Problem,
-        credits: u64,
-        num_shots: usize,
+        p           : &Problem,
+        credits     : u64,
+        num_shots   : usize,
+        seeds       : Box<[u64]>,
         problem_name: &str,
         method_name : &str,
-        extra_info: &str,
+        extra_info  : &str,
     ) -> Conclusion {
+        assert_eq!(seeds.len(), num_shots);
         let mut shots = Vec::with_capacity(num_shots);
-        for _ in 0..num_shots {
-            let shot = self.shot(p, credits);
+        let mut seeds_str = String::from("seeds:");
+        for &seed in &seeds {
+            let rng = SmallRng::seed_from_u64(seed);
+            let shot = self.shot(p, rng, credits);
             shots.push(shot);
+            let seed_str = format!("-{seed}");
+            seeds_str.push_str(&seed_str);
         }
 
+        let mut extra_info = String::from(extra_info);
+        extra_info.push_str(&seeds_str);
         Conclusion::new(
             shots,
             p,
@@ -233,13 +242,15 @@ pub trait Method where Self:Sized {
         // let mut ers = Vec::new();
         for (mut m, m_name) in ms.into_iter() {
             for credits in config::CREDITS {
+                let seeds = random_seeds(num_shots_per_method);
                 let c = m.run(
-                    p,
-                    credits,
+                    p                   ,
+                    credits             ,
                     num_shots_per_method,
-                    problem_name,
-                    &m_name,
-                    "", // TODO: problem with no extra
+                    seeds               ,
+                    problem_name        ,
+                    &m_name             ,
+                    ""                  , // TODO: problem with no extra
                 ).to_csv();
                 print!("{c}");
             }
@@ -282,3 +293,14 @@ macro_rules! consume_credit {
     };
 }
 
+
+
+fn random_seeds(num_seeds: usize) -> Box<[u64]> {
+    let seeds = Vec::with_capacity(num_seeds);
+    for _ in 0..num_seeds {
+        let seed = rand::random();
+        seeds.push(seed);
+    }
+
+    seeds.into_boxed_slice()
+}

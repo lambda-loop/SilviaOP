@@ -37,7 +37,7 @@ pub struct MemeticBagTsp {
     elite_size      : usize     ,
     round_len       : usize     , 
     // fitness         : Fitness   ,
-    rng             : SmallRng  ,
+    // rng             : SmallRng  ,
     crosser         : Crossing  , 
     assembler       : Assembly  ,
     tsp_searcher    : TspSearch, 
@@ -50,6 +50,7 @@ impl MemeticBagTsp {
     fn run (
         &mut self       ,
         p     : &Problem,
+        mut rng   : SmallRng,
         budget: u64     ,
     ) -> (Tour, u64) {
         let mut used    = 0               ;
@@ -81,7 +82,7 @@ impl MemeticBagTsp {
 
         let mut pop: Box<_> = (self.genesis) (
             problem_len,
-            &mut self.rng,
+            &mut rng,
             pop_size,
         ).into_iter()
          .map(|tour| {
@@ -103,7 +104,7 @@ impl MemeticBagTsp {
 
         let mut iters = 0u64;
         while used < budget {
-            tournament(&mut self.rng, round_len, &pop, &mut chairs);
+            tournament(&mut rng, round_len, &pop, &mut chairs);
             if let Some((tour, _, ts)) = extracts_best_feasible(
                 &pop, best_score, tmax,
             ) && ts.score > best_score {
@@ -116,18 +117,18 @@ impl MemeticBagTsp {
             }
 
             for (t, f, ts) in pop.iter_mut() {
-                let l = self.rng.random_range(0..elite_size);
-                let r = self.rng.random_range(0..elite_size);
+                let l = rng.random_range(0..elite_size);
+                let r = rng.random_range(0..elite_size);
 
                 let l = chairs[l].visited_block();
                 let r = chairs[r].visited_block();
                 let child = t.visited_block_mut();
 
-                (self.crosser)(l, r, child, &mut self.rng);
+                (self.crosser)(l, r, child, &mut rng);
                 t.fix();
 
                 ts.cost = (self.assembler)(
-                    t.as_mut_slice(), &mut self.rng,
+                    t.as_mut_slice(), &mut rng,
                     costs, tsp_iters
                 );
                 ts.score = t.score(scores);
@@ -135,7 +136,7 @@ impl MemeticBagTsp {
                 *ts = (self.mutator) (
                     t,
                     *ts, 
-                    &mut self.rng,
+                    &mut rng,
                     &occupied,
                     &mut used,
                     budget, 
@@ -147,7 +148,7 @@ impl MemeticBagTsp {
                 *f = fitness(*ts);
                 (*ts, *f) = (self.searcher) (
                     t, *ts, *f, 
-                    &mut self.rng, &mut used, budget,
+                    &mut rng, &mut used, budget,
                     p, &fitness, self.tsp_searcher,tsp_iters,
                 );
 
@@ -172,9 +173,9 @@ use crate::{Method, experiment::Result as EResult};
 
 use super::tsp::ils;
 impl Method for MemeticBagTsp {
-    fn shot(&mut self, p: &Problem, budget: u64) -> EResult {
+    fn shot(&mut self, p: &Problem, rng: SmallRng, budget: u64) -> EResult {
         let start = Instant::now();
-        let (tour, iters) = MemeticBagTsp::run(self, p, budget);
+        let (tour, iters) = MemeticBagTsp::run(self, p, rng, budget);
         let time = start.elapsed();
 
         EResult {
@@ -190,15 +191,13 @@ impl Method for MemeticBagTsp {
             ROUND_SIZES,
             TSPITERS  ,
         ) {
-            let seed: u64 = rand::random();
-            let rng = SmallRng::seed_from_u64(seed);
             let m = MemeticBagTsp {
                 genesis          : pop_genesis   ,
                 pop_size         : pop           ,
                 elite_size       : elite         ,
                 round_len        : round         ,
                 // fitness          : todo!()       ,
-                rng              : rng           ,
+                // rng              : rng           ,
                 crosser          : bag_cross     ,
                 assembler        : ils::assembly ,
                 tsp_searcher     : ils::ils      ,
@@ -207,10 +206,9 @@ impl Method for MemeticBagTsp {
                 searcher         : canonical     ,
             };
 
-            let m_name
-                = "memetic_bag_tsp_popsize:{pop}_elite_size:{elite}_round_len:{round}_assembleris:{assembler}_seed:{seed}";
+            let m_name = format!("memetic_bag_tsp_popsize:{pop}_elite_size:{elite}_round_len:{round}_tspiters:{tspiters}");
 
-            v.push((m, m_name.to_string()));
+            v.push((m, m_name));
         }
 
         v
