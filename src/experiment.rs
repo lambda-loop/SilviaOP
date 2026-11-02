@@ -202,13 +202,13 @@ pub trait Method where Self:Sized {
         &mut self,
         p           : &Problem,
         credits     : u64,
-        num_shots   : usize,
+        // num_shots   : usize,
         seeds       : Box<[u64]>,
         problem_name: &str,
         method_name : &str,
         extra_info  : &str,
     ) -> Conclusion {
-        assert_eq!(seeds.len(), num_shots);
+        let num_shots = seeds.len();
         let mut shots = Vec::with_capacity(num_shots);
         let mut seeds_str = String::from("seeds:");
         for &seed in &seeds {
@@ -243,16 +243,17 @@ pub trait Method where Self:Sized {
         for (mut m, m_name) in ms.into_iter() {
             for credits in config::CREDITS {
                 let seeds = random_seeds(num_shots_per_method);
-                let c = m.run(
+                let line = m.run(
                     p                   ,
                     credits             ,
-                    num_shots_per_method,
                     seeds               ,
                     problem_name        ,
                     &m_name             ,
                     ""                  , // TODO: problem with no extra
                 ).to_csv();
-                print!("{c}");
+                // doesnt occupies memory but can lose performance
+                // by sync'ing everytime..
+                print!("{line}");
             }
         }
     }
@@ -262,7 +263,7 @@ pub trait Method where Self:Sized {
         num_shots_per_method: usize,
     ) { // -> Vec<Conclusion> {
         assert_ne!(num_shots_per_method, 0);
-        let ps_len = ps.len();
+        // let ps_len = ps.len();
         
         ps.into_par_iter()
             .for_each(|(p, p_name)| {
@@ -296,7 +297,7 @@ macro_rules! consume_credit {
 
 
 fn random_seeds(num_seeds: usize) -> Box<[u64]> {
-    let seeds = Vec::with_capacity(num_seeds);
+    let mut seeds = Vec::with_capacity(num_seeds);
     for _ in 0..num_seeds {
         let seed = rand::random();
         seeds.push(seed);
