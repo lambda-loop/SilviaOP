@@ -218,7 +218,8 @@ impl Method for MemeticBagTsp {
 const POP_SIZES  : [usize;3] = [ 20, 30, 50 ];
 const ELITE_SIZES: [usize;3] = [ 5 , 7 , 10 ];
 const ROUND_SIZES: [usize;3] = [ 3 , 5 , 8 ];
-const TSPITERS: [u64;3] = [ 1_000 , 10_000 , 100_000 ];
+// const TSPITERS: [u64;3] = [ 1_000 , 10_000 , 100_000 ];
+const TSPITERS: [u64;1] = [ 100_000 ];
 
 // we dont know anymoer if its sorted or not
 fn extracts_best_feasible(
