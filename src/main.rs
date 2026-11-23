@@ -41,8 +41,33 @@ fn main() {
     // print!("{}", Conclusion::header());
 
     // thread::spawn(move || oplib_problems(sx));
-    thread::spawn(move || all_problems(sx));
-    MemeticBagTsp::run_all_ms_in_all_ps(rx, 10);
+    let single_instance = match std::env::var("OP_INSTANCE") {
+        Ok(name) => {
+            let filename = Path::new(&name);
+            assert!(
+                filename.file_name() == Some(filename.as_os_str()),
+                "OP_INSTANCE deve conter só o nome do arquivo: {name:?}",
+            );
+            let (directory, parse): (&str, fn(&str) -> Problem) =
+                match filename.extension().and_then(|ext| ext.to_str()) {
+                    Some("txt") => ("data", Problem::from_classical),
+                    Some("oplib") => ("OPLib", Problem::from_op),
+                    _ => panic!("OP_INSTANCE deve terminar em .txt ou .oplib: {name:?}"),
+                };
+            let path = Path::new(directory).join(filename);
+            let content = fs::read_to_string(&path)
+                .unwrap_or_else(|err| panic!("Não foi possível ler {}: {err}", path.display()));
+            sx.send((parse(&content), name)).unwrap();
+            drop(sx);
+            true
+        }
+        Err(std::env::VarError::NotPresent) => {
+            thread::spawn(move || all_problems(sx));
+            false
+        }
+        Err(err) => panic!("OP_INSTANCE inválida: {err}"),
+    };
+    MemeticBagTsp::run_all_ms_in_all_ps(rx, 10, single_instance);
 
     // for _ in 0..40  {
     //     rx.recv();

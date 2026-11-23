@@ -249,10 +249,9 @@ pub trait Method where Self:Sized {
         problem_name: &str,
         num_shots_per_method: usize,
         output: &SyncSender<String>,
-    ) {
-        let ms = Self::all_ms();
-        
-        for (mut m, m_name) in ms {
+        parallel_methods: bool,
+    ) where Self: Send {
+        let run_method = |(mut m, m_name): (Self, String)| {
             for credits in config::CREDITS {
                 let seeds = random_seeds(num_shots_per_method);
                 
@@ -268,6 +267,12 @@ pub trait Method where Self:Sized {
                 output.send(line)
                     .expect("Output thread disconnected");
             }
+        };
+        let methods = Self::all_ms();
+        if parallel_methods {
+            methods.into_par_iter().for_each(run_method);
+        } else {
+            methods.into_iter().for_each(run_method);
         }
     }
 
@@ -275,7 +280,8 @@ pub trait Method where Self:Sized {
     fn run_all_ms_in_all_ps(
         ps: Receiver<(Problem, String)>,
         num_shots_per_method: usize,
-    ) {
+        parallel_methods: bool,
+    ) where Self: Send {
         assert_ne!(num_shots_per_method, 0);
         
         // Dedicated stdout writer.
@@ -324,6 +330,7 @@ pub trait Method where Self:Sized {
                         &p_name,
                         num_shots_per_method,
                         &tx,
+                        parallel_methods,
                     );
                 });
         });
