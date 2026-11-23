@@ -14,7 +14,7 @@ if [[ ! -x target/release/OrienteeringProblem ]]; then
     exit 1
 fi
 
-requested_partition=${NPAD_PARTITION:-3tb}
+requested_partition=${NPAD_PARTITION:-amd-3tb}
 partition=$(sinfo -h -o '%P' | awk -v name="$requested_partition" '
     { sub(/\*$/, "") }
     tolower($0) == tolower(name) && !found++ { print }
